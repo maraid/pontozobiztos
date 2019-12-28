@@ -7,15 +7,12 @@ import types
 
 
 class ClientProxy:
-    """Cache for HomoBot. It's purpose is to separate those functions
-    that need to be exposed, from those that don't. A HomoBotProxy
-    object is passed to each plugin, which they can use to reach
-    some facebook functions. This was needed not to overload every
-    function in MyClient that are not needed. It can also be used to add
-    extra functionality, such as send_text.
+    """Proxy for fbchat.Client. It's purpose is to separate those functions
+    that need to be exposed, from those that don't.
+    It can also be used to add extra functionality, such as send_text.
 
     Args:
-        obj (HomoBot): HomoBot object to act as a cache on.
+        obj (MyClient): MyClient object to act as a proxy on.
     """
     functions = {}
 
@@ -53,11 +50,10 @@ class ClientProxy:
 
 class MyClient(fbchat.Client):
     """MyClient is the first layer on top fbchat. This class only
-    allows access to the chat through some functions. HomoBotProxy is
-    the class which applies a couple more restrictions."""
+    allows access to the chat through some functions.."""
     GROUP_ID = '232447473612485'
     SILENT = True
-    ENABLED = True
+    ENABLED = False
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

@@ -79,7 +79,7 @@ class HomoBot(MyClient.MyClient):
         msg=None,
     ):
         if thread_id != self.GROUP_ID:
-            pass  # return
+            return
 
         logger.info(f"{message_object} from {author_id}")
 
