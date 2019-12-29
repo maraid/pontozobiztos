@@ -116,9 +116,9 @@ class HomoBot(MyClient.MyClient):
 
         for mod in plugin_dict.values():
             try:
-                mod.on_message_unsent(client=self.proxy,
-                                      user=User.User(author_id),
-                                      mid=mid)
+                await mod.on_message_unsent(client=self.proxy,
+                                            user=User.User(author_id),
+                                            mid=mid)
             except (AttributeError, TypeError):
                 pass
 
@@ -141,7 +141,7 @@ class HomoBot(MyClient.MyClient):
 
         for mod in plugin_dict.values():
             try:
-                mod.on_message_seen(client=self.proxy, seen_by=seen_by)
+                await mod.on_message_seen(client=self.proxy, seen_by=seen_by)
             except (AttributeError, TypeError):
                 pass
 
@@ -167,9 +167,9 @@ class HomoBot(MyClient.MyClient):
 
         for mod in plugin_dict.values():
             try:
-                mod.on_reaction_added(client=self.proxy,
-                                      reaction=reaction,
-                                      user=User.User(author_id))
+                await mod.on_reaction_added(client=self.proxy,
+                                            reaction=reaction,
+                                            user=User.User(author_id))
             except (AttributeError, TypeError):
                 pass
 
@@ -193,9 +193,9 @@ class HomoBot(MyClient.MyClient):
 
         for mod in plugin_dict.values():
             try:
-                mod.on_reaction_removed(client=self.proxy,
-                                        mid=mid,
-                                        user=User.User(author_id))
+                await mod.on_reaction_removed(client=self.proxy,
+                                              mid=mid,
+                                              user=User.User(author_id))
             except (AttributeError, TypeError):
                 pass
 
