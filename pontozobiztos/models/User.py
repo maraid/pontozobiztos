@@ -135,8 +135,9 @@ class User:
             desc (str): (optional) extra info
             apply_multiplier (bool): apply multiplier
         """
-        value *= self.multiplier if apply_multiplier else 1
-        return chatmongo.add_points(self.uid, value, source, mid=mid, desc=desc)
+        mult = self.multiplier if apply_multiplier else 1
+        return chatmongo.add_points(self.uid, value * mult, source, mid=mid,
+                                    desc=desc + f" (multiplier: {mult})")
 
     # def add_message(self, message_object):
     #     """Registers a message to the user.
