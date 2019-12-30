@@ -47,8 +47,11 @@ async def admin_stuff(client, author, message, text):
             return False
 
         user_id = split_text[1]
-        return chatmongo.add_points(user_id, value, "utility.addpoints",
-                                    mid=message.uid, desc="given by admin")
+        if (user := User(user_id)) is not None:
+            return user.add_points(value, "utility.addpoints",
+                                   message.uid, "given by admin", True)
+        else:
+            return False
 
     elif split_text[0] == "/setmultiplier":
         # /setmultiplier <user_id> <typename> <value> <duration>
