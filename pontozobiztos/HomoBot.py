@@ -80,6 +80,8 @@ class HomoBot(MyClient.MyClient):
     ):
         if thread_id != self.GROUP_ID:
             return
+        # if thread_id != self.uid:
+        #     return
 
         logger.info(f"{message_object} from {author_id}")
 
@@ -94,7 +96,7 @@ class HomoBot(MyClient.MyClient):
                                      author=User.User(author_id),
                                      message=copy.copy(message_object))
             except (AttributeError, TypeError):
-                pass
+                print("found smt" + mid.__name__)
 
     async def on_message_unsent(
         self,
@@ -168,6 +170,7 @@ class HomoBot(MyClient.MyClient):
         for mod in plugin_dict.values():
             try:
                 await mod.on_reaction_added(client=self.proxy,
+                                            message_id=mid,
                                             reaction=reaction,
                                             user=User.User(author_id))
             except (AttributeError, TypeError):
@@ -184,9 +187,7 @@ class HomoBot(MyClient.MyClient):
     ):
         if thread_id != self.GROUP_ID:
             return
-
         logger.info(f"{author_id} removed reaction from {mid} message.")
-
         if not chatmongo.remove_reaction(mid, author_id):
             msg = await self.fetch_message_info(mid)
             chatmongo.insert_or_update_message(msg)
@@ -194,7 +195,7 @@ class HomoBot(MyClient.MyClient):
         for mod in plugin_dict.values():
             try:
                 await mod.on_reaction_removed(client=self.proxy,
-                                              mid=mid,
+                                              message_id=mid,
                                               user=User.User(author_id))
             except (AttributeError, TypeError):
                 pass
@@ -244,11 +245,13 @@ def save_images(message_object):
         return '_'.join(file_tup) + '.' + attachment.original_extension
 
     # TODO: better config file perhaps?!
-    if (img_dir_path := os.getenv('IMAGE_DIRECTORY')) is None:
+    img_dir_path = os.getenv('IMAGE_DIRECTORY')
+    if img_dir_path is None:
         logger.error("Environmental variable 'IMAGE_DIRECTORY' was not found.")
         return
 
-    if not (path := pathlib.Path(img_dir_path)).exists():
+    path = pathlib.Path(img_dir_path)
+    if not path.exists():
         logger.warning(f"Image directory '{img_dir_path}' does not exists."
                        f"Trying to create it...")
         path.mkdir()
@@ -259,4 +262,4 @@ def save_images(message_object):
             fpath = path / create_filename(att)
             urllib.request.urlretrieve(att.large_preview_url, str(fpath))
             logger.info(f"Image saved to path: {fpath}")
-            att.path = fpath
+            att.path = str(fpath)

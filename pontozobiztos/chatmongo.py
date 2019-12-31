@@ -116,10 +116,12 @@ def update_or_add_user(user_id, fullname, nickname, last_read_at=None):
                                   }},
                                   upsert=True)
 
-    if upserted := bool(update.upserted_id):
+    upserted = bool(update.upserted_id)
+    if upserted:
         logger.info(f"New user was added to the database with name: {fullname},"
                     f" id: {user_id}")
-    if modified := bool(update.modified_count):
+    modified = bool(update.modified_count)
+    if modified:
         logger.info(f"Existing user '{fullname}' (id: {user_id}) was updated")
 
     return upserted or modified
@@ -493,7 +495,6 @@ def insert_or_update_message(message_object):
         return rtn
 
     message_object.created_at = message_object.created_at or datetime.now()
-
     update = message_coll.update_one(
         {'_id': message_object.uid},
         {'$set': {
@@ -506,7 +507,7 @@ def insert_or_update_message(message_object):
             'reactions': serialize_reactions(*message_object.reactions),
             'sticker': None,
             'attachments': serialize_attachments(*message_object.attachments),
-            'replied_to': message_object.replied_to,
+            'replied_to': message_object.replied_to.uid if message_object.replied_to else None,
             'unsent': message_object.unsent,
          }},
         upsert=True

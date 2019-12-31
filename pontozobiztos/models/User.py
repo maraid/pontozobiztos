@@ -164,8 +164,3 @@ class User:
         msg_list = chatmongo.get_messages_by_user_ids(
             self.uid, from_date=from_date, to_date=to_date)
         return msg_list
-
-
-if __name__ == "__main__":
-    print(a := User("100001108161207"))
-    print(a.uid)

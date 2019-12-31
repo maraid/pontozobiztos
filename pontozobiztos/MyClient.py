@@ -52,8 +52,8 @@ class MyClient(fbchat.Client):
     """MyClient is the first layer on top fbchat. This class only
     allows access to the chat through some functions.."""
     GROUP_ID = '232447473612485'
-    SILENT = True
-    ENABLED = False
+    SILENT = False
+    ENABLED = True
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

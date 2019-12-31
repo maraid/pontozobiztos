@@ -1,9 +1,16 @@
 *.log
 cookies
 test.py
+
+# kakiefier stuff
 images/
 classifier/
 files/
+pontozobiztos/plugins/kakiefier/grouped_images/
+pontozobiztos/plugins/kakiefier/test_images/
+pontozobiztos/plugins/kakiefier/classified_data/*/*/*.*
+*.h5
+
 
 
 

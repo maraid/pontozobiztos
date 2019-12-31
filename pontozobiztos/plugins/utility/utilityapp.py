@@ -47,7 +47,8 @@ async def admin_stuff(client, author, message, text):
             return False
 
         user_id = split_text[1]
-        if (user := User(user_id)) is not None:
+        user = User(user_id)
+        if user is not None:
             return user.add_points(value, "utility.addpoints",
                                    message.uid, "given by admin", True)
         else:
@@ -90,12 +91,19 @@ def set_multiplier(user_id, typename, value, duration):
     """
     def parse_duration_to_expiration_date():
         days = hours = minutes = 0
-        if match := re.search(r"(\d+)d", duration):
+
+        match = re.search(r"(\d+)d", duration)
+        if match is not None:
             days = int(match.group(1))
-        if match := re.search(r"(\d+)h", duration):
+
+        match = re.search(r"(\d+)h", duration)
+        if match is not None:
             hours = int(match.group(1))
-        if match := re.search(r"(\d+)m", duration):
+
+        match = re.search(r"(\d+)m", duration)
+        if match is not None:
             minutes = int(match.group(1))
+
         return datetime.today() + timedelta(days=days, hours=hours, minutes=minutes)
 
     return chatmongo.set_multiplier(user_id, value, typename,
@@ -121,7 +129,8 @@ def transfer(author, message, user_id, amount):
         return False
 
     # :class:`User` will return None if the uid is not found in the db
-    if (receiver_user := User(user_id)) is None or not author:
+    receiver_user = User(user_id)
+    if receiver_user is None or not author:
         logger.info(f"Transfer could not be made because {user_id} "
                     f"does not exist. No changes were made.")
         return False
