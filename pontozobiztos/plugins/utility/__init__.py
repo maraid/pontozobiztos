@@ -7,4 +7,4 @@ ENABLED = True
 # init = utilityapp.init
 on_message = utilityapp.on_message
 # on_image = utilityapp.on_image
-# on_reaction = utilityapp.on_reaction
+# on_reaction_added = utilityapp.on_reaction
