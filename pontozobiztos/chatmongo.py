@@ -226,7 +226,7 @@ def get_points_sum(user_id: str, from_date=None, to_date=None):
     try:
         return user_coll.aggregate(pipeline).next()["total"]
     except StopIteration:
-        return None
+        return 0
 
 
 def add_points(user_id, value, source, ts=None, mid=None, desc=""):
