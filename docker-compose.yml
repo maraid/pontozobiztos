@@ -1,0 +1,20 @@
+version: '3.0'
+services:
+  chatbot:
+    build: .
+    depends_on:
+      - mongo
+    restart: always
+    volumes:
+      - data:/chatbot_data
+  mongo:
+    image: mongo
+    restart: always
+  mongo-express:
+    image: mongo-express
+    restart: always
+    ports:
+      - 8081:8081
+
+volumes:
+  data:

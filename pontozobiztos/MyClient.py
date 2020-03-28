@@ -73,7 +73,7 @@ class MyClient(fbchat.Client):
     @ClientProxy.register("send")
     async def send(self, message, thread_id=None, thread_type=None):
         del thread_id
-        del thread_type
+        # del thread_type
 
         if not self.ENABLED:
             self.logger.info("Message hasn't been sent due to inactive mode")
@@ -84,6 +84,7 @@ class MyClient(fbchat.Client):
             return None
 
         return await super().send(message, self.GROUP_ID, ThreadType.GROUP)
+        # return await super().send(message, '1445795951', ThreadType.USER)
 
     @ClientProxy.register("react_to_message")
     async def react_to_message(self, message_id, reaction):

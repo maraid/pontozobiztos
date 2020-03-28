@@ -5,6 +5,8 @@ import asyncio
 import os
 from pontozobiztos import HomoBot
 
+COOKIES_LOC = "/chatbot_data/cookies"
+
 load_dotenv()
 logger = logging.getLogger("chatbot")
 loop = asyncio.get_event_loop()
@@ -13,7 +15,7 @@ loop = asyncio.get_event_loop()
 async def start():
     try:
         logger.debug("Reading cookies...")
-        with open("cookies", "rb") as cookies:
+        with open(COOKIES_LOC, "rb") as cookies:
             session_cookies = pickle.load(cookies)
         logger.debug("Cookies found. Trying to use them to log in")
     except (FileNotFoundError, pickle.UnpicklingError, EOFError):
@@ -26,7 +28,7 @@ async def start():
                                   session_cookies=session_cookies,
                                   loop=loop)
     logger.info("Login successful!")
-    with open("cookies", "wb") as cookies:
+    with open(COOKIES_LOC, "wb") as cookies:
         pickle.dump(client.get_session(), cookies)
         logger.debug("Cookies saved with pickle protocol")
 

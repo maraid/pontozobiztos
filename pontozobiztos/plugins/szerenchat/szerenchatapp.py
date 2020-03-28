@@ -3,6 +3,7 @@ from pontozobiztos.models.User import User
 from pontozobiztos.MyClient import ClientProxy
 import random
 import logging
+from pontozobiztos import chatmongo
 
 logger = logging.getLogger("chatbot")
 
@@ -44,5 +45,10 @@ def roll(client, author, message):
 
 
 
+if __name__ == "__main__":
+    print(chatmongo.get_points_sum("100002385331635"))
 
-
+    attis = User("100002385331635")
+    print(attis)
+    attis.add_points(4.0, "szerenchat", "asd")
+    print(attis)

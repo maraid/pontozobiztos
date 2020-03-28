@@ -60,3 +60,7 @@ def get_later_datetime(days, hours, minutes, seconds=0):
     today = datetime.today()
     dt = relativedelta(days=days, hours=hours, minutes=minutes, seconds=seconds)
     return today + dt
+
+
+def get_monogram(name):
+    return '.'.join(n[0] for n in name.split(' ')) + '.'

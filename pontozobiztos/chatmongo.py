@@ -1,6 +1,6 @@
 """MongoHelper is the main wrapper for the MongoDB server. Basic
-    chat functions are defined here, but feel free to write your own
-    queries or use different collections.
+chat functions are defined here, but feel free to write your own
+queries or use different collections.
 """
 
 import pymongo
@@ -12,7 +12,7 @@ from fbchat import Message, Mention, MessageReaction
 
 logger = logging.getLogger("chatbot.chatmongo")
 
-client = pymongo.MongoClient()
+client = pymongo.MongoClient('mongodb://mongo:27017')
 db = client.chat
 user_coll = db.users
 message_coll = db.messages

@@ -18,7 +18,7 @@ logformat = "%(asctime)s.%(msecs)03d [%(levelname)s] <%(module)s> %(funcName)s()
 dateformat = "%Y-%m-%d %H:%M:%S"
 formatter = logging.Formatter(fmt=logformat, datefmt=dateformat)
 
-fh = logging.FileHandler('chatbot.log', 'a', 'utf-8')
+fh = logging.FileHandler('/chatbot_data/chatbot.log', 'a', 'utf-8')
 fh.setFormatter(formatter)
 logger.addHandler(fh)
 
