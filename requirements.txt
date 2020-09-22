@@ -6,4 +6,4 @@ python-dotenv==0.10.3
 git+git://github.com/maraid/num2words@master#egg=num2words
 unidecode
 fuzzywuzzy
-tensorflow
+# tensorflow

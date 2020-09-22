@@ -25,32 +25,32 @@ client = fbchat.Client(os.getenv("EMAIL"), os.getenv("PASSWORD"),
 with open("cookie", "wb") as cookies:
     pickle.dump(client.getSession(), cookies)
 
-before = None
+before = 1597694004274
 def main():
     global before
-    data = client.fetchThreadMessages(GROUP_ID, 50, before)
+    data = client.fetchThreadMessages(GROUP_ID, 5000, before)
     for msg in data:
         chatmongo.insert_or_update_message(msg)
     before = data[-1].timestamp
     time.sleep(random.uniform(0, 3))
 
-# retries = 0
-# while True:
-#     if retries == 3:
-#         retries = 0
-#         print("Retries exceeded limit. Sleeping for an hour. Starting at: "
-#               + str(datetime.datetime.now()))
-#         time.sleep(3600)
-#     try:
-#         main()
-#     except:
-#         retries += 1
-#         print("ERROR trying again #" + str(retries))
-#         time.sleep(5 * 60)
-#         continue
-#     retries = 0
-a = client.fetchUserInfo('100000287377073')
-print(a)
+retries = 0
+while True:
+    if retries == 3:
+        retries = 0
+        print("Retries exceeded limit. Sleeping for an hour. Starting at: "
+              + str(datetime.datetime.now()))
+        time.sleep(3600)
+    try:
+        main()
+    except:
+        retries += 1
+        print("ERROR trying again #" + str(retries))
+        time.sleep(5 * 60)
+        continue
+    retries = 0
+# a = client.fetchUserInfo('100000287377073')
+# print(a)
 # print(res)
 # print(type(res))
 # pprint(dict(res['232447473612485']), width=1, indent=4)

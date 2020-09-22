@@ -6,7 +6,7 @@ from pontozobiztos import chatmongo
 from pontozobiztos import utils
 
 FUZZY_LIMIT = 90
-MIN_PLAYERS = 2
+MIN_PLAYERS = 1
 expected_number = 1
 is_running = True
 scores = {}
@@ -33,10 +33,10 @@ def format_scores():
         user_ptr = chatmongo.user_coll.find({'_id': uid}, {'fullname': 1})
         text += r"{}: " + str(score) + "\n"
         mentions.append((uid, utils.get_monogram(user_ptr.next()['fullname'])))
-    return Message.format_mentions(text, *mentions)
+    return Message.formatMentions(text, *mentions)
 
 
-async def on_message(client, author, message):
+def on_message(client, author, message):
     global expected_number
     global is_running
     global scores
@@ -66,14 +66,14 @@ async def on_message(client, author, message):
     if accepted is None:
         return
     elif not accepted or author.uid in last_n:
-        await client.react_to_message(message.uid, 'NO')
-        await client.send(format_scores())
+        client.react_to_message(message.uid, 'NO')
+        client.send(format_scores())
         # reset
         expected_number = 1
         scores = {}
         last_n = []
         # start new
-        await client.send_text('1')
+        client.send_text('1')
         return
 
     last_n.append(author.uid)
@@ -82,4 +82,4 @@ async def on_message(client, author, message):
 
     scores.update({author.uid: scores.get(author.uid, 0) + 1})
     expected_number += 1
-    return await client.react_to_message(message.uid, 'YES')
+    return client.react_to_message(message.uid, 'YES')

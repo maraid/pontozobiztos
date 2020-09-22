@@ -3,7 +3,9 @@ from pontozobiztos.models.User import User
 from pontozobiztos.MyClient import ClientProxy
 import random
 import logging
+from typing import List
 from pontozobiztos import chatmongo
+import re
 
 logger = logging.getLogger("chatbot")
 
@@ -16,39 +18,133 @@ def on_message(client=None, author=None, message=None):
         author (User): pontozobiztos.models.User object
         message (Message): Received fbchat.Message object
     """
+    print('entered szerenchatapp.on_message')
+    if message.text and message.text[0] != '!':
+        return False
+    print('szerenchatapp.on_message first check passed')
+    command = message.text[1:]
+    command_list = ['fvi', 'fví', 'd6', 'k52', 'roll', 'lapot',
+                    'kő', 'ko', 'papír', 'papir', 'olló', 'ollo']
+    if command.split()[0] not in command_list:
+        return False
+    print('szerenchatapp.on_message second check passed')
+
+    if re.match(r'fv[ií]', command):
+        response = flip_a_coin()
+    elif match := re.match(r'fv[ií] +(\d+)', command):
+        n = int(match.group(1))
+        response = ', '.join(flip_n_coins(n))
+    elif re.match(r'^\s*d6\s*$', command):
+        response = str(d6())
+    elif match := re.match(r'^\s*d6 +(\d+)', command):
+        n = int(match.group(1))
+        response = ' '.join(str(n) for n in d6_n(n))
+    elif re.match(r'k52$', command) or re.match(r'lapot$', command):
+        response = k52()
+    elif match := re.match(r'k52 +(\d+)$', command):
+        n = int(match.group(1))
+        response = ' '.join(k52_n(n))
+    elif re.match(r'roll$', command):
+        response = roll()
+    elif match := re.match(r'roll +(\d+)$', command):
+        n = int(match.group(1))
+        response = ' '.join(str(x) for x in roll_n(n))
+    elif match := re.match(r'roll +(\d+) +(\d+)$', command):
+        a = int(match.group(1))
+        b = int(match.group(2))
+        response = roll(a, b)
+    elif match := re.match(r'roll +(\d+) +(\d+) +(\d+)$', command):
+        n = int(match.group(1))
+        a = int(match.group(2))
+        b = int(match.group(3))
+        response = ' '.join(str(x) for x in roll_n(n, a, b))
+    elif command in ('kő', 'ko', 'papír', 'papir', 'olló', 'ollo'):
+        response = rock_paper_scissors()
+    else:
+        response = "Invalid command format"
+
+    client.send_reply(message.uid, response)
+    return True
 
 
-def roll(client, author, message):
-    def success():
-        return client.react_to_message(message.uid, 'YES')
+def flip_a_coin():
+    """Flips a coin
 
-    def failure():
-        return client.react_to_message(message.uid, 'NO')
-
-    arg_list = message.text.split(' ')
-
-    limit_low = 1
-    limit_high = 100
-
-    if not arg_list or arg_list[0] != "/roll":
-        return
-
-    if len(arg_list) > 1:
-        try:
-            limit_high = int(arg_list[1])
-        except ValueError:
-            logger.error(f"Could not convert '{arg_list[1]}' to int.")
-            return
-
-    if len(arg_list) > 2:
-        limit_low = limit_high
+    Returns:
+        str: heads or tails
+    """
+    return random.choice(['fej', 'írás'])
 
 
+def flip_n_coins(n):
+    """Flips n coins
 
-if __name__ == "__main__":
-    print(chatmongo.get_points_sum("100002385331635"))
+    Args:
+        n(int): times to flip the coin
 
-    attis = User("100002385331635")
-    print(attis)
-    attis.add_points(4.0, "szerenchat", "asd")
-    print(attis)
+    Returns:
+        List[str]: list of heads and tails
+    """
+    return [flip_a_coin() for _ in range(n)]
+
+
+def d6():
+    """Rolls n times with 6 sided dice. Returns a list of the results
+
+    Returns:
+        List[int]: list of dice rolls
+    """
+    return random.randint(1, 6)
+
+
+def d6_n(n):
+    return [d6() for _ in range(n)]
+
+
+SYMBOLS = ['♠', '♣', '♥', '♦']
+NUMBERS = ['A', '1', '2', '3', '4', '5', '6',
+           '7', '8', '9', '10', 'J', 'Q', 'K']
+
+
+def k52():
+    """Picks n cards from a 52 cards deck. If put back is set to True
+    then tha same card can be in the result multiple times.
+
+    Returns:
+        str: Card picked
+    """
+    return random.choice(SYMBOLS) + random.choice(NUMBERS)
+
+
+def k52_n(n, put_back=False):
+    """Picks n cards from a 52 card deck. If put_back is True then the same
+    card can be in the result multiple times.
+
+    Args:
+        n(int): number of cards to pick from the deck
+        put_back(bool): marks whether the one card can be picked multiple times
+
+    Returns:
+        List[str]: Cards picked
+    """
+    if n > 52:
+        return ["Csak 52 kártya van te nyomi"]
+    if put_back:
+        return [k52() for _ in range(n)]
+    else:
+        hand = set()
+        while len(hand) != n:
+            hand.add(k52())
+        return list(hand)
+
+
+def roll(a=1, b=100):
+    return random.randint(a, b)
+
+
+def roll_n(n, a=1, b=100):
+    return [roll(a, b) for _ in range(n)]
+
+
+def rock_paper_scissors():
+    return random.choice(['🗿', '📄', '✂'])

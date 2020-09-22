@@ -4,7 +4,7 @@ enabled_plugins = [
     "counting_game",
     # "google_sheets",
     # "kakiefier",
-    # "szerenchat",
+    "szerenchat",
     "utility"
 ]
 

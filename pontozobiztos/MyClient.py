@@ -35,17 +35,17 @@ class ClientProxy:
             return func
         return something
 
-    async def send_text(self, text):
+    def send_text(self, text):
         """Sends a text message back"""
-        await self.send(fbchat.Message(text=text,))
+        self.send(fbchat.Message(text=text,))
 
-    async def send_reply(self, reply_to_id, text):
+    def send_reply(self, reply_to_id, text):
         """Sends a text response to reply_to_id"""
-        await self.send(fbchat.Message(text=text, reply_to_id=reply_to_id))
+        self.send(fbchat.Message(text=text, reply_to_id=reply_to_id))
 
-    async def remove_reaction(self, message_id):
+    def remove_reaction(self, message_id):
         """Removes a reaction from message marked by message_id"""
-        await self.react_to_message(message_id, None)
+        self.react_to_message(message_id, None)
 
 
 class MyClient(fbchat.Client):
@@ -56,22 +56,22 @@ class MyClient(fbchat.Client):
     ENABLED = True
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super(MyClient, self).__init__(*args, **kwargs)
         self.logger = logging.getLogger("chatbot.MyClient")
         self.proxy = ClientProxy(self)
 
     @ClientProxy.register("fetch_message_info")
-    async def fetch_message_info(self, mid, thread_id=None):
+    def fetch_message_info(self, mid, thread_id=None):
         del thread_id
-        return await super().fetch_message_info(mid, self.GROUP_ID)
+        return super().fetchMessageInfo(mid, self.GROUP_ID)
 
     @ClientProxy.register("fetch_group_info")
-    async def fetch_group_info(self, *group_ids):
+    def fetch_group_info(self, *group_ids):
         del group_ids
-        return (await super().fetch_group_info(self.GROUP_ID))[self.GROUP_ID]
+        return (super().fetchGroupInfo(self.GROUP_ID))[self.GROUP_ID]
 
     @ClientProxy.register("send")
-    async def send(self, message, thread_id=None, thread_type=None):
+    def send(self, message, thread_id=None, thread_type=None):
         del thread_id
         # del thread_type
 
@@ -83,11 +83,11 @@ class MyClient(fbchat.Client):
             self.logger.info("Message hasn't been sent due to silent mode")
             return None
 
-        return await super().send(message, self.GROUP_ID, ThreadType.GROUP)
+        return super().send(message, self.GROUP_ID, ThreadType.GROUP)
         # return await super().send(message, '1445795951', ThreadType.USER)
 
     @ClientProxy.register("react_to_message")
-    async def react_to_message(self, message_id, reaction):
+    def react_to_message(self, message_id, reaction):
         if not self.ENABLED:
             self.logger.info("Reaction hasn't been sent due to disabled mode")
             return None
@@ -105,4 +105,4 @@ class MyClient(fbchat.Client):
                                   "Check MessageReaction for further info")
                 return None
 
-        return await super().react_to_message(message_id, reaction)
+        return super().reactToMessage(message_id, reaction)

@@ -1,6 +1,16 @@
 from pontozobiztos import chatmongo
 import re
 
+
+question_count = 1
+
+
+def print_title(text):
+    global question_count
+    print("#" + str(question_count) + " " + text)
+    question_count += 1
+
+
 def most_messages_toplist():
     res = chatmongo.get_message_collection().aggregate([
         {"$sort": {"author": 1}},
@@ -21,6 +31,7 @@ def most_messages_toplist():
 
 
 def print_most_messages_top3():
+    print_title("Most messages sent TOP3")
     for i, user in enumerate(most_messages_toplist()[:3]):
         print(str(i + 1) + ". " + user["user_data"]["fullname"] + ": " + str(user["count"]))
 
@@ -59,6 +70,7 @@ def _first_message_from_each_user():
 
 
 def who_joined_last_3():
+    print_title("\nLast 3 joined")
     users = _first_message_from_each_user()[-3:]
     for i, user in enumerate(reversed(users)):
         print(str(i + 1) + ". " + user.get("fullname") + ": " + str(user.get("timestamp")))
@@ -108,6 +120,7 @@ def _number_of_reacts_per_user():
 
 
 def who_sent_the_most_reacts_top3():
+    print_title("\nMost reacts sent by TOP3")
     users = _number_of_reacts_per_user()[:3]
     for i, user in enumerate(users):
         print(str(i + 1) + ". " + user.get("fullname") + ": " + str(user.get("react_count")))
@@ -230,6 +243,7 @@ def _most_reacts_received_toplist(react_type=None):
 
 
 def print_who_received_the_most_reacts_top3(react_type=None):
+    print_title("\nMost reacts received TOP3")
     users = _most_reacts_received_toplist(react_type)
     for i, user in enumerate(users[:3]):
         print(str(i + 1) + ". " + user["user_data"]["fullname"] + ": " + str(user["count"]))
@@ -254,19 +268,19 @@ def kicsekkjel_count():
 
 
 if __name__ == "__main__":
-    print("Most messages sent TOP3")
+
     print_most_messages_top3()
 
-    print("\nLast 3 joined")
+
     who_joined_last_3()
 
-    print("\nMost reacts sent by TOP3")
+
     who_sent_the_most_reacts_top3()
 
-    print("\nMost reacts received TOP3")
+
     print_who_received_the_most_reacts_top3()
 
-    print("\nMost angry reacts received TOP3")
+
     print_who_received_the_most_reacts_top3("ANGRY")
 
     print("\nMost sad reacts received TOP3")

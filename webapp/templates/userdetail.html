@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<style>
+table {
+    border-collapse: collapse;
+}
+
+table, th, td {
+    border: 1px solid black;
+}
+</style>
+<meta charset="UTF-8">
+<title>Title</title>
+</head>
+<body>
+<h2>{{ name }} - {{ points_sum }} pont</h2>
+<table style="width: 70%">
+    <tr>
+        <th>Dátum</th>
+        <th>Leírás</th>
+        <th>Forrás</th>
+        <th>Érték</th>
+</tr>
+{% for point in user_points%}
+  <tr>
+    <td>{{ point.timestamp }}</td>
+    <td>{{ point.description }}</td>
+    <td>{{ point.source }}</td>
+    <td>{{ point.value }}</td>
+  </tr>
+{% endfor %}
+</table>
+</body>
+</html>

@@ -11,7 +11,7 @@ logger = logging.getLogger("chatbot")
 _NAME = "utility"
 
 
-async def admin_stuff(client, author, message, text):
+def admin_stuff(client, author, message, text):
     """Admin commands. Currently implemented::
         - addpoints
         - setmultiplier
@@ -161,7 +161,7 @@ def transfer(author, message, user_id, amount):
     return deposit_ok
 
 
-async def common_stuff(client, author, message, text):
+def common_stuff(client, author, message, text):
     """ Common commands. Currently implemented:
         - transfer
 
@@ -200,7 +200,7 @@ async def common_stuff(client, author, message, text):
         return transfer(author, message, user_id, value)
 
 
-async def on_message(client, author, message):
+def on_message(client, author, message):
     """On message callback
 
     Args:
@@ -225,13 +225,13 @@ async def on_message(client, author, message):
                                                        + mention.length):]
         offset_correction += len(mention.thread_id) - mention.length
 
-    success = await common_stuff(client, author, message, replaced_text)
+    success = common_stuff(client, author, message, replaced_text)
     if author.is_admin and not success:
-        success = await admin_stuff(client, author, message, replaced_text)
+        success = admin_stuff(client, author, message, replaced_text)
 
     if success:
         logger.info(f"Command '{message.text}' was successfully executed")
-        await client.react_to_message(message.uid, 'YES')
+        client.react_to_message(message.uid, 'YES')
     else:
         logger.info(f"Failed to execute '{message.text}'")
-        await client.react_to_message(message.uid, 'NO')
+        client.react_to_message(message.uid, 'NO')
