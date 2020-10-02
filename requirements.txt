@@ -1,5 +1,5 @@
 APScheduler==3.6.3
-fbchat-asyncio==0.3.0
+git+https://github.com/gitCommitWiL/fbchat
 pymongo==3.9.0
 python-dateutil==2.8.1
 python-dotenv==0.10.3
@@ -7,3 +7,5 @@ git+git://github.com/maraid/num2words@master#egg=num2words
 unidecode
 fuzzywuzzy
 # tensorflow
+spotipy
+ytmusicapi

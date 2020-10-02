@@ -13,15 +13,15 @@ logger = logging.getLogger("chatbot")
 
 
 def start():
-    try:
-        logger.debug("Reading cookies...")
-        with open(COOKIES_LOC, "r") as cookies:
-            session_cookies = json.load(cookies)
-        logger.debug("Cookies found. Trying to use them to log in")
-    except (FileNotFoundError, EOFError):
-        session_cookies = None
-        logger.debug("Cookies were not found. Using email and password...")
-
+    # try:
+    #     logger.debug("Reading cookies...")
+    #     with open(COOKIES_LOC, "r") as cookies:
+    #         session_cookies = json.load(cookies)
+    #     logger.debug("Cookies found. Trying to use them to log in")
+    # except (FileNotFoundError, EOFError):
+    #     session_cookies = None
+    #     logger.debug("Cookies were not found. Using email and password...")
+    session_cookies = None
     logger.info("Logging in...")
     client = HomoBot.HomoBot(email=os.getenv('EMAIL'),
                              password=os.getenv('PASSWORD'),

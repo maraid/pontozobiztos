@@ -87,7 +87,7 @@ class HomoBot(MyClient.MyClient):
                                author=User.User(author_id),
                                message=copy.copy(message_object))
             except (AttributeError, TypeError):
-                print("found smt" + mid.__name__)
+                pass
 
     def onMessageUnsent(
         self,

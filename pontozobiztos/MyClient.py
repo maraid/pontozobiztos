@@ -19,6 +19,7 @@ class ClientProxy:
     # this block lists the methods to be registered. The purpose of this
     # is to suppress PyCharm warnings.
     send: types.MethodType
+    send_uri: types.MethodType
     react_to_message: types.MethodType
     fetch_message_info: types.MethodType
     fetch_group_info: types.MethodType
@@ -42,6 +43,9 @@ class ClientProxy:
     def send_reply(self, reply_to_id, text):
         """Sends a text response to reply_to_id"""
         self.send(fbchat.Message(text=text, reply_to_id=reply_to_id))
+
+    def send_uri_reply(self, reply_to_id, uri, text=None):
+        self.send_uri(uri, fbchat.Message(text=text, reply_to_id=reply_to_id))
 
     def remove_reaction(self, message_id):
         """Removes a reaction from message marked by message_id"""
@@ -85,6 +89,12 @@ class MyClient(fbchat.Client):
 
         return super().send(message, self.GROUP_ID, ThreadType.GROUP)
         # return await super().send(message, '1445795951', ThreadType.USER)
+
+    @ClientProxy.register("send_uri")
+    def send_uri(self, uri, message=None):
+        return super().sendUri(uri, message,
+                               thread_id=self.GROUP_ID,
+                               thread_type=ThreadType.GROUP)
 
     @ClientProxy.register("react_to_message")
     def react_to_message(self, message_id, reaction):

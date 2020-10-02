@@ -5,7 +5,8 @@ enabled_plugins = [
     # "google_sheets",
     # "kakiefier",
     "szerenchat",
-    "utility"
+    "utility",
+    "link_mirror"
 ]
 
 __all__ = [p.name for p in pathlib.Path(__file__).parent.iterdir()
