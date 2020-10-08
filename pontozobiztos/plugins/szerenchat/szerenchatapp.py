@@ -1,33 +1,29 @@
-from fbchat import Message
+import fbchat
 from pontozobiztos.models.User import User
-from pontozobiztos.MyClient import ClientProxy
 import random
 import logging
 from typing import List
-from pontozobiztos import chatmongo
 import re
 
 logger = logging.getLogger("chatbot")
 
 
-def on_message(client=None, author=None, message=None):
+def on_message(thread=None, author=None, message=None):
     """On message callback
 
     Args:
-        client (ClientProxy): a proxy fbchat.Client
+        thread (fbchat.GroupData): a proxy fbchat.Client
         author (User): pontozobiztos.models.User object
-        message (Message): Received fbchat.Message object
+        message (fbchat.Message): Received fbchat.Message object
     """
-    print('entered szerenchatapp.on_message')
     if message.text and message.text[0] != '!':
         return False
-    print('szerenchatapp.on_message first check passed')
+
     command = message.text[1:]
     command_list = ['fvi', 'fví', 'd6', 'k52', 'roll', 'lapot',
                     'kő', 'ko', 'papír', 'papir', 'olló', 'ollo']
     if command.split()[0] not in command_list:
         return False
-    print('szerenchatapp.on_message second check passed')
 
     if re.match(r'fv[ií]', command):
         response = flip_a_coin()
@@ -63,7 +59,7 @@ def on_message(client=None, author=None, message=None):
     else:
         response = "Invalid command format"
 
-    client.send_reply(message.uid, response)
+    thread.send_text(response, reply_to_id=message.id)
     return True
 
 

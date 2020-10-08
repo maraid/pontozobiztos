@@ -64,3 +64,4 @@ def get_later_datetime(days, hours, minutes, seconds=0):
 
 def get_monogram(name):
     return '.'.join(n[0] for n in name.split(' ')) + '.'
+

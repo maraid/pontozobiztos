@@ -1,18 +1,18 @@
-from . import MyClient
 from . import chatmongo
 from . import plugins
 from .models import User
 import importlib
 import logging
 import fbchat
-import pathlib
-import urllib.request
 import os
 import copy
+import pickle
 
 
 logger = logging.getLogger("chatbot")
 logger.setLevel(logging.DEBUG)
+
+COOKIES_LOC = "/chatbot_data/cookies"
 
 logformat = "%(asctime)s.%(msecs)03d [%(levelname)s] <%(module)s> %(funcName)s(): %(message)s"
 dateformat = "%Y-%m-%d %H:%M:%S"
@@ -49,159 +49,219 @@ def init_plugins(*args, **kwargs):
                            "because it doesn't implement 'init'.".format(name))
 
 
-class HomoBot(MyClient.MyClient):
-    def __init__(self, email, password, session_cookies=None):
+def on_2fa_callback():
+    return int(input("Enter 2FA code: "))
+
+
+class HomoBot(fbchat.Session):
+    GROUP_ID = '232447473612485'
+    SILENT = False
+    ENABLED = True
+    group: fbchat.GroupData
+
+    @classmethod
+    def create(cls):
+        logger.info("Logging in...")
+        try:
+            with open(COOKIES_LOC, "rb") as cookies:
+                session_cookies = pickle.load(cookies)
+            self = cls.from_cookies(session_cookies)
+        except (FileNotFoundError, pickle.UnpicklingError):
+            self = cls.login(os.getenv('EMAIL'),
+                             os.getenv('PASSWORD'),
+                             )
+
         logger.info(f"Starting facebook client. ENABLED: {self.ENABLED}; "
                     f"SILENT: {self.SILENT}")
-        super().__init__(email, password, session_cookies)
+
+        logger.info("Login successful!")
+        with open(COOKIES_LOC, "wb") as cookies:
+            pickle.dump(self.get_cookies(), cookies)
+        logger.debug("Cookies saved with pickle protocol")
+
         logger.debug("Cross-checking facebook data with database")
         self.update_users()
         logger.info("Initializing plugins...")
-        init_plugins(client=self.proxy)
+        init_plugins()
+        return self
 
-    def onMessage(
-        self,
-        mid=None,
-        author_id=None,
-        message=None,
-        message_object=None,
-        thread_id=None,
-        thread_type=fbchat.ThreadType.USER,
-        ts=None,
-        metadata=None,
-        msg=None,
-    ):
-        if thread_id != self.GROUP_ID:
-            return
-        # if thread_id != self.uid:
-        #     return
+    def listen(self):
+        listener = fbchat.Listener(session=self,
+                                   chat_on=False,
+                                   foreground=False)
+        for event in listener.listen():
+            self.handle_event(event)
 
-        logger.info(f"{message_object} from {author_id}")
+    def handle_event(self, event: fbchat._events.Event) -> bool:
+        if isinstance(event, fbchat.MessageEvent):
+            thread = event.message.thread
+            if thread.id == self.GROUP_ID:
+                thread = self.group  # changes from Group to GroupData
+                return False  # COMMENT THIS
+            elif thread.id != self.user.id:
+                return False
 
-        chatmongo.insert_or_update_message(message_object)
-        
-        print(plugin_dict)
-        for mod in plugin_dict.values():
-            try:
-                mod.on_message(client=self.proxy,
-                               author=User.User(author_id),
-                               message=copy.copy(message_object))
-            except (AttributeError, TypeError):
-                pass
+            msg = event.message.fetch()
+            print(msg)
+            logger.info(f"{msg} from {msg.author}")
 
-    def onMessageUnsent(
-        self,
-        mid=None,
-        author_id=None,
-        thread_id=None,
-        thread_type=None,
-        ts=None,
-        msg=None,
-    ):
-        if thread_id != self.GROUP_ID:
-            return
+            # chatmongo.insert_or_update_message(msg)
 
-        logger.info(f"{author_id} unsent the message {repr(mid)} at {ts}")
+            for mod in plugin_dict.values():
+                try:
+                    mod.on_message(thread=thread,
+                                   author=User.User(msg.author),
+                                   message=copy.copy(msg))
+                except (AttributeError, TypeError):
+                    pass
+        elif isinstance(event, fbchat.ThreadsRead):
+            pass
+        return False
 
-        if not chatmongo.mark_message_as_deleted(mid):
-            msg = self.fetch_message_info(mid)
-            chatmongo.insert_or_update_message(msg)
+    # async def onMessage(
+    #     self,
+    #     mid=None,
+    #     author_id=None,
+    #     message=None,
+    #     message_object=None,
+    #     thread_id=None,
+    #     thread_type=fbchat.ThreadType.USER,
+    #     ts=None,
+    #     metadata=None,
+    #     msg=None,
+    # ):
+    #     if thread_id != self.GROUP_ID:
+    #         return
+    #     # if thread_id != self.uid:
+    #     #     return
+    #
+    #     logger.info(f"{message_object} from {author_id}")
+    #
+    #     chatmongo.insert_or_update_message(message_object)
+    #
+    #     print(plugin_dict)
+    #     for mod in plugin_dict.values():
+    #         try:
+    #             await mod.on_message(client=self.proxy,
+    #                            author=User.User(author_id),
+    #                            message=copy.copy(message_object))
+    #         except (AttributeError, TypeError):
+    #             pass
+    #
+    # async def onMessageUnsent(
+    #     self,
+    #     mid=None,
+    #     author_id=None,
+    #     thread_id=None,
+    #     thread_type=None,
+    #     ts=None,
+    #     msg=None,
+    # ):
+    #     if thread_id != self.GROUP_ID:
+    #         return
+    #
+    #     logger.info(f"{author_id} unsent the message {repr(mid)} at {ts}")
+    #
+    #     if not chatmongo.mark_message_as_deleted(mid):
+    #         msg = self.fetch_message_info(mid)
+    #         chatmongo.insert_or_update_message(msg)
+    #
+    #     for mod in plugin_dict.values():
+    #         try:
+    #             await mod.on_message_unsent(client=self.proxy,
+    #                                   user=User.User(author_id),
+    #                                   mid=mid)
+    #         except (AttributeError, TypeError):
+    #             pass
+    #
+    # async def onMessageSeen(
+    #     self,
+    #     seen_by=None,
+    #     thread_id=None,
+    #     thread_type=fbchat.ThreadType.USER,
+    #     seen_ts=None,
+    #     ts=None,
+    #     metadata=None,
+    #     msg=None,
+    # ):
+    #     if thread_id != self.GROUP_ID:
+    #         return
+    #
+    #     logger.info(f"Messages seen by {seen_by} at {seen_ts}")
+    #
+    #     chatmongo.set_last_read_at(seen_by, seen_ts)
+    #
+    #     for mod in plugin_dict.values():
+    #         try:
+    #             await mod.on_message_seen(client=self.proxy, seen_by=seen_by)
+    #         except (AttributeError, TypeError):
+    #             pass
+    #
+    # async def onReactionAdded(
+    #     self,
+    #     mid=None,
+    #     reaction=None,
+    #     author_id=None,
+    #     thread_id=None,
+    #     thread_type=None,
+    #     ts=None,
+    #     msg=None,
+    # ):
+    #     if thread_id != self.GROUP_ID:
+    #         return
+    #
+    #     logger.info(
+    #         f"{author_id} reacted to message {mid} with {reaction.name}")
+    #
+    #     if not chatmongo.add_reaction(mid, author_id, reaction):
+    #         msg = self.fetch_message_info(mid)
+    #         chatmongo.insert_or_update_message(msg)
+    #
+    #     for mod in plugin_dict.values():
+    #         try:
+    #             await mod.on_reaction_added(client=self.proxy,
+    #                                   message_id=mid,
+    #                                   reaction=reaction,
+    #                                   user=User.User(author_id))
+    #         except (AttributeError, TypeError):
+    #             pass
+    #
+    # async def on_reaction_removed(
+    #     self,
+    #     mid=None,
+    #     author_id=None,
+    #     thread_id=None,
+    #     thread_type=None,
+    #     ts=None,
+    #     msg=None,
+    # ):
+    #     if thread_id != self.GROUP_ID:
+    #         return
+    #     logger.info(f"{author_id} removed reaction from {mid} message.")
+    #     if not chatmongo.remove_reaction(mid, author_id):
+    #         msg = self.fetch_message_info(mid)
+    #         chatmongo.insert_or_update_message(msg)
+    #
+    #     for mod in plugin_dict.values():
+    #         try:
+    #             await mod.on_reaction_removed(client=self.proxy,
+    #                                     message_id=mid,
+    #                                     user=User.User(author_id))
+    #         except (AttributeError, TypeError):
+    #             pass
 
-        for mod in plugin_dict.values():
-            try:
-                mod.on_message_unsent(client=self.proxy,
-                                      user=User.User(author_id),
-                                      mid=mid)
-            except (AttributeError, TypeError):
-                pass
-
-    def onMessageSeen(
-        self,
-        seen_by=None,
-        thread_id=None,
-        thread_type=fbchat.ThreadType.USER,
-        seen_ts=None,
-        ts=None,
-        metadata=None,
-        msg=None,
-    ):
-        if thread_id != self.GROUP_ID:
-            return
-
-        logger.info(f"Messages seen by {seen_by} at {seen_ts}")
-
-        chatmongo.set_last_read_at(seen_by, seen_ts)
-
-        for mod in plugin_dict.values():
-            try:
-                mod.on_message_seen(client=self.proxy, seen_by=seen_by)
-            except (AttributeError, TypeError):
-                pass
-
-    def onReactionAdded(
-        self,
-        mid=None,
-        reaction=None,
-        author_id=None,
-        thread_id=None,
-        thread_type=None,
-        ts=None,
-        msg=None,
-    ):
-        if thread_id != self.GROUP_ID:
-            return
-
-        logger.info(
-            f"{author_id} reacted to message {mid} with {reaction.name}")
-
-        if not chatmongo.add_reaction(mid, author_id, reaction):
-            msg = self.fetch_message_info(mid)
-            chatmongo.insert_or_update_message(msg)
-
-        for mod in plugin_dict.values():
-            try:
-                mod.on_reaction_added(client=self.proxy,
-                                      message_id=mid,
-                                      reaction=reaction,
-                                      user=User.User(author_id))
-            except (AttributeError, TypeError):
-                pass
-
-    def onReactionRemoved(
-        self,
-        mid=None,
-        author_id=None,
-        thread_id=None,
-        thread_type=None,
-        ts=None,
-        msg=None,
-    ):
-        if thread_id != self.GROUP_ID:
-            return
-        logger.info(f"{author_id} removed reaction from {mid} message.")
-        if not chatmongo.remove_reaction(mid, author_id):
-            msg = self.fetch_message_info(mid)
-            chatmongo.insert_or_update_message(msg)
-
-        for mod in plugin_dict.values():
-            try:
-                mod.on_reaction_removed(client=self.proxy,
-                                        message_id=mid,
-                                        user=User.User(author_id))
-            except (AttributeError, TypeError):
-                pass
+    def get_group_user_data(self):
+        client = fbchat.Client(session=self)
+        self.group = next(client.fetch_thread_info([self.GROUP_ID]))
+        ids = [p.id for p in self.group.participants]
+        return [(key,
+                 data['name'],
+                 self.group.nicknames[key])
+                for key, data in client._fetch_info(*ids).items()]
 
     def update_users(self):
         """Updates the database from Facebook
         (ID, username, nickname w/o points)
         """
-        group_info = self.fetch_group_info()
-        fb_id_set = group_info.participants
-        db_id_set = set(chatmongo.get_user_ids())
-        if (fb_id_set - db_id_set) != set():
-            for uid, user in (self.fetchUserInfo(*fb_id_set)).items():
-                chatmongo.update_or_add_user(
-                    uid,
-                    user.name,
-                    group_info.nicknames.get(uid)
-                )
+        for ud in self.get_group_user_data():
+            chatmongo.update_or_add_user(*ud)

@@ -7,9 +7,8 @@ import pymongo
 from datetime import datetime
 import logging
 from pontozobiztos import utils
-from fbchat import ImageAttachment, ShareAttachment, Attachment
-from fbchat import Message, Mention, MessageReaction
 import fbchat
+from fbchat import ShareAttachment, ImageAttachment, Mention, Attachment, Message, Image
 import requests
 # import urllib
 import pathlib
@@ -365,10 +364,6 @@ def deserialize_mentions(*mentions):
                     length=mnt.get('length')) for mnt in mentions]
 
 
-def deserialize_reactions(*reactions):
-    return [MessageReaction[reaction] for reaction in reactions]
-
-
 def deserialize_attachments(*attachments):
     rtn = []
     for att in attachments:
@@ -380,14 +375,16 @@ def deserialize_attachments(*attachments):
         elif att.get('type') == 'image':
             att_obj = ImageAttachment(
                 original_extension=att.get('original_extension'),
-                large_preview_url=att.get('large_preview_url'),
-                large_preview_height=att.get('large_preview_height'),
-                large_preview_width=att.get('large_preview_width')
+                previews={Image(
+                    url=att.get('large_preview_url'),
+                    height=att.get('large_preview_height'),
+                    width=att.get('large_preview_width'))
+                },
             )
             att_obj.path = att.get('path')
         else:
             att_obj = Attachment()
-        att_obj.uid = att.uid
+        att_obj.id = att.get('uid')
         rtn.append(att_obj)
     return rtn
 
@@ -407,14 +404,14 @@ def deserialize_message(data):
         attachments=deserialize_attachments(*data.get('attachments')),
         sticker=data.get('sticker')
     )
-    msg.uid = data.get('_id')
+    msg.id = data.get('_id')
     msg.author = data.get('author')
     msg.timestamp = data.get('timestamp')
     # msg.is_read = data.get('is_read')
     # msg.read_by = data.get('read_by')
-    msg.reactions = deserialize_reactions(*data.get('reactions'))
+    msg.reactions = data.get('reactions')
     replied_to_message = Message()
-    replied_to_message.uid = data.get('replied_to_id')
+    replied_to_message.id = data.get('replied_to_id')
     msg.replied_to = replied_to_message
     msg.unsent = data.get('unsent')
     return msg
@@ -460,16 +457,6 @@ def get_messages_by_mid(*mids):
             message_coll.find({'_id': {'$in': mids}})]
 
 
-def serialize_reactions(reactions):
-    """Serializes reactions to store in db
-
-    Args:
-        reactions (dict): dict of reactions
-            {fb_uid: MessageReaction}
-    """
-    return {uid: reaction.name for uid, reaction in reactions.items()}
-
-
 def serialize_mentions(*mentions):
     return {mention.thread_id: {
         'offset': mention.offset,
@@ -480,7 +467,7 @@ def serialize_mentions(*mentions):
 def serialize_attachments(*attachments):
     rtn = []
     for att in attachments:
-        att_dict = {'uid': att.uid}
+        att_dict = {'uid': att.id}
         if isinstance(att, ShareAttachment):
             att_dict.update({
                 'type': 'share',
@@ -488,13 +475,14 @@ def serialize_attachments(*attachments):
                 'original_url': att.original_url
             })
         elif isinstance(att, ImageAttachment):
+            largest_image = sorted(list(att.previews), key=lambda i: i.width or 0)[-1]
             att_dict.update({
                 'type': 'image',
                 'path': (att.path if hasattr(att, 'path') else None),
                 'original_extension': att.original_extension,
-                'preview_url': att.large_preview_url,
-                'preview_height': att.large_preview_height,
-                'preview_width': att.large_preview_width
+                'preview_url': largest_image.url,
+                'preview_height': largest_image.height,
+                'preview_width': largest_image.width
             })
         else:  # TODO: do the rest?!
             att_dict['type'] = 'other'
@@ -517,6 +505,7 @@ def save_images(message_object, path=None):
     Returns:
         None
     """
+
     def create_filename(attachment) -> str:
         """Creates filename to save as with extension.
 
@@ -528,9 +517,9 @@ def save_images(message_object, path=None):
         """
         file_tup = (message_object.created_at.strftime('%Y%m%d%H%M%S'),
                     message_object.author,
-                    attachment.uid)
+                    attachment.id)
         return '_'.join(file_tup) + '.' + attachment.original_extension
-    
+
     if not message_object.attachments:
         return
 
@@ -546,11 +535,18 @@ def save_images(message_object, path=None):
         if isinstance(att, fbchat.ImageAttachment) \
                 and att.original_extension in ('jpg', 'jpeg', 'png'):
             fpath = path / create_filename(att)
-            img = requests.get(att.preview_url, timeout=5)
+            largest_image = sorted(list(att.previews), key=lambda i: i.width or 0)[-1]
+            img = requests.get(largest_image.url, timeout=5)
             open(fpath, 'wb').write(img.content)
             # urllib.request.urlretrieve(att.preview_url, str(fpath))
             logger.info(f"Image saved to path: {fpath}")
-            att.path = str(fpath)
+            try:
+                delattr(att, '__setattr__')
+                att.__dict__.update({"path": str(fpath)})
+            except Exception as e:
+                print('IDESUSS', str(e), type(e))
+
+            print('Yozsefvaros')
 
 
 def insert_or_update_message(message_object):
@@ -560,23 +556,20 @@ def insert_or_update_message(message_object):
         message_object (Message): fbchat message object
     """
 
-    dt = datetime.fromtimestamp(int(message_object.timestamp) / 1000)
-    message_object.created_at = dt
-    save_images(message_object, 'images')
+    save_images(message_object, '/chatbot_data/images/')
     update = message_coll.update_one(
-        {'_id': message_object.uid},
+        {'_id': message_object.id},
         {'$set': {
             'text': message_object.text,
             'mentions': serialize_mentions(*message_object.mentions),
             'author': message_object.author,
-            'timestamp': message_object.timestamp,
-            'created_at': dt or datetime.now(),
+            'created_at': message_object.created_at,
             # 'is_read': message_object.is_read,
             # 'read_by': message_object.read_by,
-            'reactions': serialize_reactions(message_object.reactions),
+            'reactions': message_object.reactions,
             'sticker': None,
             'attachments': serialize_attachments(*message_object.attachments),
-            'replied_to': message_object.replied_to.uid if message_object.replied_to else None,
+            'replied_to': message_object.replied_to.id if message_object.replied_to else None,
             'unsent': message_object.unsent,
          }},
         upsert=True

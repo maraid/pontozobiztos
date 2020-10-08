@@ -1,6 +1,5 @@
 """Main entry point"""
 import fbchat
-from fbchat import ThreadType
 import logging
 import functools
 import types
@@ -67,7 +66,7 @@ class MyClient(fbchat.Client):
     @ClientProxy.register("fetch_message_info")
     def fetch_message_info(self, mid, thread_id=None):
         del thread_id
-        return super().fetchMessageInfo(mid, self.GROUP_ID)
+        return super().fetch_message_info(mid, self.GROUP_ID)
 
     @ClientProxy.register("fetch_group_info")
     def fetch_group_info(self, *group_ids):

@@ -2,10 +2,9 @@ import pathlib
 
 enabled_plugins = [
     "counting_game",
-    # "google_sheets",
     # "kakiefier",
     "szerenchat",
-    "utility",
+    # "utility",
     "link_mirror"
 ]
 

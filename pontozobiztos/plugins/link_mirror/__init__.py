@@ -1,6 +1,5 @@
-from fbchat import Message, ShareAttachment
+from fbchat import Message, GroupData
 from pontozobiztos.models.User import User
-from pontozobiztos.MyClient import ClientProxy
 
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
@@ -8,30 +7,29 @@ from spotipy.oauth2 import SpotifyClientCredentials
 import ytmusicapi
 
 import re
+from fbchat import GroupData
 from dotenv import load_dotenv
-from requests.exceptions import HTTPError
 load_dotenv()
 
 
-def on_message(client, author, message):
+def on_message(thread, author, message):
     """On message callback
 
     Args:
-        client (ClientProxy): a proxy fbchat.Client
+        thread (GroupData): a proxy fbchat.Client
         author (User): pontozobiztos.models.User object
         message (Message): Received fbchat.Message object
     """
     try:
         if message.text[:31] == "https://open.spotify.com/track/":
-            client.send_uri_reply(message.uid, sp2yt(message.text))
+            thread.send_uri(uri=sp2yt(message.text))
         elif message.text[:31] == "https://music.youtube.com/watch":
-            client.send_uri_reply(message.uid, yt2sp(message.text))
+            thread.send_uri(uri=yt2sp(message.text))
         else:
             return False
     except PluginException as e:
-        client.send_reply(message.uid, str(e))
+        thread.send_text(str(e), reply_to_id=message.id)
     return True
-
 
 
 spotify = spotipy.Spotify(
@@ -43,8 +41,8 @@ ytmusic = ytmusicapi.YTMusic()
 def sp_find_track_metadata_by_url(url):
     try:
         track = spotify.track(url)
-    except HTTPError:
-        raise PluginException("Invalid spotify url: " + url)
+    except spotipy.exceptions.SpotifyException:
+        raise PluginException('Invalid spotify url')
 
     title = track["name"]
     artists = [artist["name"] for artist in track["artists"]]
@@ -63,7 +61,7 @@ def yt_find_track_metadata_by_url(url):
     if match := re.match(r'https://music.youtube.com/watch\?v=([^&]*)', url):
         track_id = match.group(1)
     else:
-        raise PluginException('Invalid YouTube Music url: ' + url)
+        raise PluginException('Invalid YouTube Music url')
 
     res = ytmusic.get_song(track_id)
     return res['title'], res.get('artists', [])

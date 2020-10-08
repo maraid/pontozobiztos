@@ -14,24 +14,29 @@ dotenv.load_dotenv("../../.env")
 GROUP_ID = '232447473612485'
 
 try:
-    with open("cookie", "rb") as cookies:
+    with open("/chatbot_data/cookies", "rb") as cookies:
         session_cookies = pickle.load(cookies)
 except (FileNotFoundError, pickle.UnpicklingError, EOFError):
     session_cookies = None
 
-client = fbchat.Client(os.getenv("EMAIL"), os.getenv("PASSWORD"),
-                       session_cookies=session_cookies)
+if session_cookies:
+    session = fbchat.Session.from_cookies(session_cookies)
+else:
+    session = fbchat.Session.login(
+        os.getenv("EMAIL"), os.getenv("PASSWORD"))
 
 with open("cookie", "wb") as cookies:
-    pickle.dump(client.getSession(), cookies)
+    pickle.dump(session.get_cookies(), cookies)
 
-before = 1597694004274
+thread = fbchat._threads.Group(session=session, id=GROUP_ID)
+
+before = None
 def main():
     global before
-    data = client.fetchThreadMessages(GROUP_ID, 5000, before)
+    data = thread._fetch_messages(10, before)
     for msg in data:
         chatmongo.insert_or_update_message(msg)
-    before = data[-1].timestamp
+    before = data[0].created_at
     time.sleep(random.uniform(0, 3))
 
 retries = 0
@@ -43,7 +48,8 @@ while True:
         time.sleep(3600)
     try:
         main()
-    except:
+    except Exception as e:
+        print(str(e))
         retries += 1
         print("ERROR trying again #" + str(retries))
         time.sleep(5 * 60)

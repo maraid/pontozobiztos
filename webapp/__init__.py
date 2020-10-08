@@ -33,5 +33,9 @@ def userdetail(id):
                            points_sum=points_sum)
 
 
+@app.route("/links")
+def links_
+
+
 if __name__ == "__main__":
     app.run(host='192.168.1.100', port=9000, debug=False)

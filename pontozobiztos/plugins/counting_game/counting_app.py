@@ -4,13 +4,23 @@ from fuzzywuzzy import fuzz
 from fbchat import Message
 from pontozobiztos import chatmongo
 from pontozobiztos import utils
+from pontozobiztos import chatscheduler
+import fbchat
+from datetime import datetime
+from datetime import timedelta
+from apscheduler.jobstores.base import JobLookupError
 
+GRACE_PERIOD = 2 * 60  # seconds
+SHOW_GAME_OVER = True
 FUZZY_LIMIT = 90
 MIN_PLAYERS = 1
 expected_number = 1
-is_running = True
+is_running = False
 scores = {}
 last_n = []
+current_thread: fbchat.GroupData
+
+game_over_job = None
 
 accepted_languages = ['hu', 'en', 'fr', 'it', 'de']
 numbers_0_to_500 = {}
@@ -26,60 +36,99 @@ def fuzzy_compare_to_all(text):
     return None
 
 
-def format_scores():
-    text = "GAME OVER\n\nScores:\n"
+def format_scores(reason="GAME OVER"):
+    text = reason + "\n\nScores:\n"
     mentions = []
     for uid, score in scores.items():
         user_ptr = chatmongo.user_coll.find({'_id': uid}, {'fullname': 1})
         text += r"{}: " + str(score) + "\n"
         mentions.append((uid, utils.get_monogram(user_ptr.next()['fullname'])))
-    return Message.formatMentions(text, *mentions)
+    return Message.format_mentions(text, *mentions)
 
 
-def on_message(client, author, message):
+def on_message(thread, author, message):
+    """
+
+    Args:
+        thread (fbchat.GroupData):
+        author (pontozobiztos.models.User.User):
+        message (fbchat.Message):
+
+    Returns:
+
+    """
     global expected_number
     global is_running
     global scores
     global last_n
+    global current_thread
 
+    print('counting_game.on_message called')
     text = unidecode(message.text).lower()
-    if author.is_admin:
-        if text == '1':
+    if text == '1':
+        if not is_running:
             is_running = True
-        if text == '/stop':
-            is_running = False
-
-    if not is_running:
-        return
+            current_thread = thread
+        else:
+            do_game_over()
+    elif not is_running:
+        return False
     elif len(text) == 0:
-        return
+        return False
     elif '_' in text:
-        return
+        return False
     elif text[0] == '0' and len(text) > 1:
-        return
+        return False
 
     try:
-        accepted = (int(message.text) == expected_number)
+        accepted = (int(text) == expected_number)
     except ValueError:
         accepted = fuzzy_compare_to_all(text)
 
     if accepted is None:
         return
     elif not accepted or author.uid in last_n:
-        client.react_to_message(message.uid, 'NO')
-        client.send(format_scores())
-        # reset
-        expected_number = 1
-        scores = {}
-        last_n = []
-        # start new
-        client.send_text('1')
-        return
+        message.react('👎')
+        do_game_over()
+    else:
+        last_n.append(author.uid)
+        if len(last_n) >= MIN_PLAYERS:
+            last_n = last_n[-MIN_PLAYERS:]
 
-    last_n.append(author.uid)
-    if len(last_n) >= MIN_PLAYERS:
-        last_n = last_n[-MIN_PLAYERS:]
+        scores.update({author.uid: scores.get(author.uid, 0) + 1})
+        expected_number += 1
+        message.react('👍')
+        schedule_game_over()
+    return True
 
-    scores.update({author.uid: scores.get(author.uid, 0) + 1})
-    expected_number += 1
-    return client.react_to_message(message.uid, 'YES')
+
+def do_game_over(reason="GAME OVER"):
+    global scores
+    global last_n
+    global expected_number
+    global is_running
+
+    if SHOW_GAME_OVER:
+        text, mentions = format_scores(reason)
+        current_thread.send_text(text=text, mentions=mentions)
+    # reset
+    expected_number = 1
+    scores = {}
+    last_n = []
+    is_running = False
+
+
+def schedule_game_over():
+    global game_over_job
+
+    sc = chatscheduler.get_scheduler()
+    dt = datetime.now() + timedelta(seconds=GRACE_PERIOD)
+    try:
+        game_over_job.reschedule('date', run_date=dt)
+    except (JobLookupError, AttributeError):
+        game_over_job = sc.add_job(
+            do_game_over,
+            'date',
+            ["TIME'S UP"],
+            run_date=dt
+        )
