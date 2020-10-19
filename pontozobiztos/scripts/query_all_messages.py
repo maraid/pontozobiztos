@@ -25,7 +25,7 @@ else:
     session = fbchat.Session.login(
         os.getenv("EMAIL"), os.getenv("PASSWORD"))
 
-with open("cookie", "wb") as cookies:
+with open("/chatbot_data/cookies", "wb") as cookies:
     pickle.dump(session.get_cookies(), cookies)
 
 thread = fbchat._threads.Group(session=session, id=GROUP_ID)
@@ -33,7 +33,7 @@ thread = fbchat._threads.Group(session=session, id=GROUP_ID)
 before = None
 def main():
     global before
-    data = thread._fetch_messages(10, before)
+    data = thread._fetch_messages(100, before)
     for msg in data:
         chatmongo.insert_or_update_message(msg)
     before = data[0].created_at

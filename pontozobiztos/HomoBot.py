@@ -5,9 +5,13 @@ import importlib
 import logging
 import fbchat
 import os
-import copy
 import pickle
+from datetime import datetime
+import time
+import random
+import pytz
 
+utc = pytz.UTC
 
 logger = logging.getLogger("chatbot")
 logger.setLevel(logging.DEBUG)
@@ -81,6 +85,8 @@ class HomoBot(fbchat.Session):
 
         logger.debug("Cross-checking facebook data with database")
         self.update_users()
+        logger.debug("Synchronizing database with facebook")
+        self.sync_database()
         logger.info("Initializing plugins...")
         init_plugins()
         return self
@@ -105,13 +111,13 @@ class HomoBot(fbchat.Session):
             print(msg)
             logger.info(f"{msg} from {msg.author}")
 
-            # chatmongo.insert_or_update_message(msg)
+            chatmongo.insert_or_update_message(msg)
 
             for mod in plugin_dict.values():
                 try:
                     mod.on_message(thread=thread,
                                    author=User.User(msg.author),
-                                   message=copy.copy(msg))
+                                   message=msg)
                 except (AttributeError, TypeError):
                     pass
         elif isinstance(event, fbchat.ThreadsRead):
@@ -265,3 +271,13 @@ class HomoBot(fbchat.Session):
         """
         for ud in self.get_group_user_data():
             chatmongo.update_or_add_user(*ud)
+
+    def sync_database(self):
+        latest_msg_ts = chatmongo.get_latest_message().created_at
+        before = datetime.now(tz=utc)
+        while before > latest_msg_ts:
+            data = self.group._fetch_messages(100, before)
+            for msg in data:
+                chatmongo.insert_or_update_message(msg)
+            before = data[0].created_at
+            time.sleep(random.uniform(0, 3))

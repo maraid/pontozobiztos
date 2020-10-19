@@ -8,8 +8,10 @@ from datetime import datetime
 import logging
 from pontozobiztos import utils
 import fbchat
-from fbchat import ShareAttachment, ImageAttachment, Mention, Attachment, Message, Image
+from fbchat import ShareAttachment, ImageAttachment, Mention, Attachment, MessageData, Message, Image
 import requests
+import pytz
+
 # import urllib
 import pathlib
 logger = logging.getLogger("chatbot.chatmongo")
@@ -369,11 +371,13 @@ def deserialize_attachments(*attachments):
     for att in attachments:
         if att.get('type') == 'share':
             att_obj = ShareAttachment(
+                id=att.get('uid'),
                 title=att.get('title'),
                 original_url=att.get('original_url')
             )
         elif att.get('type') == 'image':
             att_obj = ImageAttachment(
+                id=att.get('uid'),
                 original_extension=att.get('original_extension'),
                 previews={Image(
                     url=att.get('large_preview_url'),
@@ -381,10 +385,8 @@ def deserialize_attachments(*attachments):
                     width=att.get('large_preview_width'))
                 },
             )
-            att_obj.path = att.get('path')
         else:
             att_obj = Attachment()
-        att_obj.id = att.get('uid')
         rtn.append(att_obj)
     return rtn
 
@@ -398,22 +400,22 @@ def deserialize_message(data):
     Returns:
         Message: Message object read from the db.
     """
-    msg = Message(
+    msg = MessageData(
+        id=data.get('_id'),
+        thread=None,
         text=data.get('text'),
         mentions=deserialize_mentions(*data.get('mentions')),
         attachments=deserialize_attachments(*data.get('attachments')),
-        sticker=data.get('sticker')
+        sticker=data.get('sticker'),
+        author=data.get('author'),
+        created_at=pytz.utc.localize(data.get('created_at')),
+        # msg.is_read = data.get('is_read')
+        # msg.read_by = data.get('read_by')
+        reactions=data.get('reactions'),
+        replied_to=Message(id=data.get('replied_to_id'), thread=None),
+        unsent=data.get('unsent')
     )
-    msg.id = data.get('_id')
-    msg.author = data.get('author')
-    msg.timestamp = data.get('timestamp')
-    # msg.is_read = data.get('is_read')
-    # msg.read_by = data.get('read_by')
-    msg.reactions = data.get('reactions')
-    replied_to_message = Message()
-    replied_to_message.id = data.get('replied_to_id')
-    msg.replied_to = replied_to_message
-    msg.unsent = data.get('unsent')
+
     return msg
 
 
@@ -490,7 +492,7 @@ def serialize_attachments(*attachments):
     return rtn
 
 
-def save_images(message_object, path=None):
+def save_images(message_object):
     """Save images found in a Message object. The path that the
     image is saved to is stored back into the message_object in the
     ImageAttachment as 'path'.
@@ -500,53 +502,22 @@ def save_images(message_object, path=None):
 
     Args:
         message_object (fbchat.Message): fbchat.Message object
-        path (str): folder to save the file
 
     Returns:
         None
     """
-
-    def create_filename(attachment) -> str:
-        """Creates filename to save as with extension.
-
-        Args:
-            attachment (fbchat.ImageAttachment): attachment obj.
-
-        Returns:
-            str: filename
-        """
-        file_tup = (message_object.created_at.strftime('%Y%m%d%H%M%S'),
-                    message_object.author,
-                    attachment.id)
-        return '_'.join(file_tup) + '.' + attachment.original_extension
-
-    if not message_object.attachments:
-        return
-
     # TODO: better config file perhaps?!
-    img_dir_path = path or "/chatbot_data/images"
-    path = pathlib.Path(img_dir_path)
-    if not path.exists():
-        logger.warning(f"Image directory '{img_dir_path}' does not exists."
-                       f"Trying to create it...")
-        path.mkdir()
-
     for att in message_object.attachments:
         if isinstance(att, fbchat.ImageAttachment) \
                 and att.original_extension in ('jpg', 'jpeg', 'png'):
-            fpath = path / create_filename(att)
+            fpath = utils.get_image_path(message_object.created_at,
+                                         message_object.author,
+                                         att.id,
+                                         att.original_extension)
             largest_image = sorted(list(att.previews), key=lambda i: i.width or 0)[-1]
             img = requests.get(largest_image.url, timeout=5)
             open(fpath, 'wb').write(img.content)
-            # urllib.request.urlretrieve(att.preview_url, str(fpath))
             logger.info(f"Image saved to path: {fpath}")
-            try:
-                delattr(att, '__setattr__')
-                att.__dict__.update({"path": str(fpath)})
-            except Exception as e:
-                print('IDESUSS', str(e), type(e))
-
-            print('Yozsefvaros')
 
 
 def insert_or_update_message(message_object):
@@ -556,7 +527,7 @@ def insert_or_update_message(message_object):
         message_object (Message): fbchat message object
     """
 
-    save_images(message_object, '/chatbot_data/images/')
+    save_images(message_object)
     update = message_coll.update_one(
         {'_id': message_object.id},
         {'$set': {
@@ -655,3 +626,9 @@ def remove_reaction(mid, reaction_author):
 #         }}
 #     )
 #     return bool(result.modified_count)
+
+
+def get_latest_message():
+    cursor = message_coll.find().sort([('created_at', -1)]).limit(1)
+    return deserialize_message(next(cursor))
+
