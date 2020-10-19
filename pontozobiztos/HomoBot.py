@@ -10,6 +10,7 @@ from datetime import datetime
 import time
 import random
 import pytz
+import pathlib
 
 utc = pytz.UTC
 
@@ -21,6 +22,11 @@ COOKIES_LOC = "/chatbot_data/cookies"
 logformat = "%(asctime)s.%(msecs)03d [%(levelname)s] <%(module)s> %(funcName)s(): %(message)s"
 dateformat = "%Y-%m-%d %H:%M:%S"
 formatter = logging.Formatter(fmt=logformat, datefmt=dateformat)
+
+data_dir = pathlib.Path('/chatbot_data')
+data_dir.mkdir(exist_ok=True)
+log_file = data_dir / 'chatbot.log'
+log_file.touch(exist_ok=True)
 
 fh = logging.FileHandler('/chatbot_data/chatbot.log', 'a', 'utf-8')
 fh.setFormatter(formatter)
