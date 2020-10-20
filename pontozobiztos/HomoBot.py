@@ -80,8 +80,7 @@ class HomoBot(fbchat.Session):
             self = cls.from_cookies(session_cookies)
         except (FileNotFoundError, pickle.UnpicklingError):
             self = cls.login(os.getenv('EMAIL'),
-                             os.getenv('PASSWORD'),
-                             )
+                             os.getenv('PASSWORD'))
 
         logger.info(f"Starting facebook client. ENABLED: {self.ENABLED}; "
                     f"SILENT: {self.SILENT}")

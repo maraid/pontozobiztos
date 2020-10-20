@@ -3,7 +3,7 @@ import pathlib
 enabled_plugins = [
     "counting_game",
     # "kakiefier",
-    "szerenchat",
+    # "szerenchat",
     # "utility",
     "link_mirror"
 ]
