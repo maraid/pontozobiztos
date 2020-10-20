@@ -16,7 +16,7 @@ import pytz
 import pathlib
 logger = logging.getLogger("chatbot.chatmongo")
 
-client = pymongo.MongoClient(host='localhost', port=27017)
+client = pymongo.MongoClient(host='mongo', port=27017)
 db = client.chat
 user_coll = db.users
 message_coll = db.messages

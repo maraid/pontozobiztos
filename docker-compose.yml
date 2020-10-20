@@ -7,9 +7,13 @@ services:
     restart: always
     volumes:
       - data:/chatbot_data
+    links:
+      - mongo
   mongo:
     image: mongo
     restart: always
+    volumes:
+      - vol_db:/data/db
   mongo-express:
     image: mongo-express
     restart: always
@@ -18,3 +22,10 @@ services:
 
 volumes:
   data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: "/chatbot_data"
+
+  vol_db:
