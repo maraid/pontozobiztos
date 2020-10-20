@@ -11,6 +11,8 @@ import time
 import random
 import pytz
 import pathlib
+from dotenv import load_dotenv
+load_dotenv()
 
 utc = pytz.UTC
 

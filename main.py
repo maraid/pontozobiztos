@@ -1,8 +1,7 @@
-from dotenv import load_dotenv
 import logging
 from pontozobiztos.HomoBot import HomoBot
 
-load_dotenv()
+
 logger = logging.getLogger("chatbot")
 
 
