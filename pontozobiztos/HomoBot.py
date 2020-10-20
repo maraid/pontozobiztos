@@ -110,7 +110,7 @@ class HomoBot(fbchat.Session):
             thread = event.message.thread
             if thread.id == self.GROUP_ID:
                 thread = self.group  # changes from Group to GroupData
-                return False  # COMMENT THIS
+                # return False  # COMMENT THIS
             elif thread.id != self.user.id:
                 return False
 
