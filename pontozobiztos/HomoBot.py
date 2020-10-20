@@ -108,17 +108,14 @@ class HomoBot(fbchat.Session):
     def handle_event(self, event: fbchat._events.Event) -> bool:
         if isinstance(event, fbchat.MessageEvent):
             thread = event.message.thread
+            msg = event.message.fetch()
+            logger.info(msg)
             if thread.id == self.GROUP_ID:
                 thread = self.group  # changes from Group to GroupData
+                chatmongo.insert_or_update_message(msg)
                 return False  # COMMENT THIS
             elif thread.id != self.user.id:
                 return False
-
-            msg = event.message.fetch()
-            print(msg)
-            logger.info(f"{msg} from {msg.author}")
-
-            chatmongo.insert_or_update_message(msg)
 
             for mod in plugin_dict.values():
                 try:
