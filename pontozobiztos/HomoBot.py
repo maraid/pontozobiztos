@@ -113,7 +113,7 @@ class HomoBot(fbchat.Session):
             if thread.id == self.GROUP_ID:
                 thread = self.group  # changes from Group to GroupData
                 chatmongo.insert_or_update_message(msg)
-                return False  # COMMENT THIS
+                # return False  # COMMENT THIS
             elif thread.id != self.user.id:
                 return False
 
