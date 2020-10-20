@@ -108,6 +108,11 @@ def do_game_over(reason="GAME OVER"):
     global expected_number
     global is_running
 
+    try:
+        game_over_job.remove()
+    except (JobLookupError, AttributeError):
+        pass
+
     if SHOW_GAME_OVER:
         text, mentions = format_scores(reason)
         current_thread.send_text(text=text, mentions=mentions)
