@@ -11,7 +11,7 @@ from datetime import timedelta
 from apscheduler.jobstores.base import JobLookupError
 
 GRACE_PERIOD = 2 * 60  # seconds
-SHOW_GAME_OVER = True
+SHOW_GAME_OVER = False
 FUZZY_LIMIT = 90
 MIN_PLAYERS = 1
 expected_number = 1
@@ -70,7 +70,9 @@ def on_message(thread, author, message):
             is_running = True
             current_thread = thread
         else:
+            message.react('👎')
             do_game_over()
+            return True
     elif not is_running:
         return False
     elif len(text) == 0:
