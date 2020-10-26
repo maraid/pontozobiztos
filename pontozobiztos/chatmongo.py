@@ -360,10 +360,11 @@ def get_admin_stats(user_id):
 
 # MESSAGE FUNCTIONS
 
-def deserialize_mentions(*mentions):
-    return [Mention(thread_id=mnt.get('thread_id'),
-                    offset=mnt.get('offset'),
-                    length=mnt.get('length')) for mnt in mentions]
+def deserialize_mentions(mentions):
+    # TODO: convert the database to contain mention list instead of object
+    return [Mention(thread_id=key,
+                    offset=val.get('offset'),
+                    length=val.get('length')) for key, val in mentions.items()]
 
 
 def deserialize_attachments(*attachments):
@@ -404,7 +405,7 @@ def deserialize_message(data):
         id=data.get('_id'),
         thread=None,
         text=data.get('text'),
-        mentions=deserialize_mentions(*data.get('mentions')),
+        mentions=deserialize_mentions(data.get('mentions')),
         attachments=deserialize_attachments(*data.get('attachments')),
         sticker=data.get('sticker'),
         author=data.get('author'),
