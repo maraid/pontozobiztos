@@ -14,11 +14,21 @@ services:
     restart: always
     volumes:
       - vol_db:/data/db
+    ports:
+      - 27017:27017
   mongo-express:
     image: mongo-express
     restart: always
     ports:
       - 8081:8081
+  web:
+    build: webapp/
+    ports:
+      - 80:80
+    depends_on:
+      - mongo
+    links: 
+      - mongo
 
 volumes:
   data:

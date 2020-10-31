@@ -5,6 +5,7 @@ enabled_plugins = [
     # "kakiefier",
     # "szerenchat",
     # "utility",
+    "webapp_link_provider",
     "link_mirror"
 ]
 
