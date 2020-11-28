@@ -1,8 +1,10 @@
+from dotenv import load_dotenv
+load_dotenv()
+
 import logging
+logger = logging.getLogger('chatbot')
+
 from pontozobiztos.HomoBot import HomoBot
-
-
-logger = logging.getLogger("chatbot")
 
 
 if __name__ == "__main__":

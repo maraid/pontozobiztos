@@ -15,10 +15,10 @@ import os
 
 # import urllib
 import pathlib
-logger = logging.getLogger("chatbot.chatmongo")
+logger = logging.getLogger("chatbot")
 
 client = pymongo.MongoClient(host=os.getenv('MONGO_HOST'),
-                             port=os.getenv('MONGO_PORT'))
+                             port=int(os.getenv('MONGO_PORT')))
 db = client.chat
 user_coll = db.users
 message_coll = db.messages
