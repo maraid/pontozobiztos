@@ -11,12 +11,14 @@ import fbchat
 from fbchat import ShareAttachment, ImageAttachment, Mention, Attachment, MessageData, Message, Image
 import requests
 import pytz
+import os
 
 # import urllib
 import pathlib
 logger = logging.getLogger("chatbot.chatmongo")
 
-client = pymongo.MongoClient(host='mongo', port=27017)
+client = pymongo.MongoClient(host=os.getenv('MONGO_HOST'),
+                             port=os.getenv('MONGO_PORT'))
 db = client.chat
 user_coll = db.users
 message_coll = db.messages
