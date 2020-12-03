@@ -117,6 +117,7 @@ class ConverterBase:
         title, _ = pattern.subn('', title)
 
         title, final_title = run_regex(title, re.compile('"(.*)"'))
+        final_title = final_title[0] if final_title else ''
 
         vert_loc = title.find('|')
         if vert_loc != -1:
@@ -138,10 +139,10 @@ class ConverterBase:
                 del splt[i]
 
         try:
-            og_artist = splt[0]
+            artists.original = [splt[0]]
             final_title = splt[1]
         except IndexError:
-            og_artist = ''
+            artists.original = []
             final_title = final_title or title
 
         def split_at_delimeters(inp):
@@ -150,23 +151,24 @@ class ConverterBase:
                 inp = inp.replace(d, ' & ')
             return [s.strip() for s in inp.split(' & ')]
 
-        if og_artist:
-            og_artist_list = split_at_delimeters(og_artist)
-            for artist in og_artist_list:
+        if artists.original:
+            og_artist_list = split_at_delimeters(artists.original[0])
+            for artist in [x for x in og_artist_list if x]:
                 spoti_search_result = spotify.search(q=artist, type='artist')
                 for it in spoti_search_result['artists']['items']:
                     if it['name'].lower() == artist:
-                        artists.original += og_artist_list
+                        artists.original = og_artist_list
                         break
         else:
             # this case assumes title - artist format
             og_artist_list = split_at_delimeters(final_title)
-            for artist in og_artist_list:
+            for artist in [x for x in og_artist_list if x]:
                 spoti_search_result = spotify.search(q=artist, type='artist')
                 for it in spoti_search_result['artists']['items']:
                     if it['name'].lower() == artist:
-                        artists.original.append(final_title)
-                        final_title = og_artist
+                        tmp = artists.original
+                        artists.original = [final_title]
+                        final_title = " ".join(tmp)
                         break
 
         artists.remove_the_a_an()
@@ -222,7 +224,7 @@ class Youtube(ConverterBase):
         except KeyError:
             raise PluginException('Video Unavailable')
         try:
-            if res['category'] not in ('Music'):
+            if res['category'] not in ('Music', 'Entertainment'):
                 raise PluginException('Not a music video')
 
             if int(res['lengthSeconds']) > 15 * 60:
@@ -233,7 +235,7 @@ class Youtube(ConverterBase):
         def split_at_and(inp):
             new_artists = []
             for a in inp:
-                a = a.replace('and', '&')
+                a = a.replace(' and ', ' & ')
                 new_artists += a.split(' & ')
             return new_artists
 
@@ -246,9 +248,12 @@ class Youtube(ConverterBase):
             pass
 
         t, a_ = cls.parse_title(res['title'])
-        art += a_
+        art = art or a_
+        art = [Artists._remove_the_a_an(a) for a in art]
+
         if not art:
             PluginException('Probably not a music video. No artists found')
+
         return t, art
 
     @classmethod
@@ -317,17 +322,33 @@ class Spotify(ConverterBase):
     URI_BASE = "https://open.spotify.com"
 
     @staticmethod
+    def strip_title(title):
+        if not title:
+            return ''
+        title = title.split(' - ')[0]
+        title = title.split(' (')[0]
+        return title.strip()
+
+    @staticmethod
     def _search(title: str, artists: List[str] = None) -> str:
         def local_search(t, a):
             if a:
                 r = spotify.search(" ".join([t, "artist:", *a]))
             else:
                 r = spotify.search(t)
-            try:
+
+            for item in r['tracks']['items']:
+                title_baseline = Spotify.strip_title(item['name'])
+                if title_baseline == title.lower():
+                    return item['external_urls']['spotify']
+            for a in artists:
+                t_temp = t + ' ' + a
+                r = spotify.search(t_temp)
                 for item in r['tracks']['items']:
-                    title_baseline, _ = ConverterBase.parse_title(item['name'])
+                    title_baseline = Spotify.strip_title(item['name'])
                     if title_baseline == title.lower():
                         return item['external_urls']['spotify']
+            try:
                 return r['tracks']['items'][0]['external_urls']['spotify']
             except IndexError:
                 raise ValueError
@@ -388,43 +409,6 @@ class Spotify(ConverterBase):
         return cls._search(title, artists)
 
     @classmethod
-    def get_url_from_data_(cls, title: str, artists: List[str] = None) -> str:
-        artists = artists or []
-        if res := cls._search(title, artists):
-            return res
-
-        if res := cls._search(title):
-            return res
-
-        pattern = re.compile(r'(\(feat. (.*)\)|\[feat. (.*)])')
-        if match := re.search(pattern, title):
-            artists.append(match.group(2) or match.group(3))
-            title = re.sub(pattern, '', title)
-
-        # if there's any other parenthesis, remove them
-        pattern = re.compile(r'(\(.*\)|\[.*])')
-        title, _ = pattern.subn('', title)
-
-        if res := cls._search(title, artists):
-            return res
-
-        if res := cls._search(title):
-            return res
-
-        try:
-            artists, title = title.split(' - ')
-        except ValueError:
-            raise InnenTudodHogyJoException("Na innen tudod, hogy jó.")
-
-        artists = artists.split(' & ')
-
-        if res := cls._search(title, artists):
-            return res
-
-        if res := cls._search(title):
-            return res
-
-    @classmethod
     def get_title_and_artists(cls, uri) -> Tuple[str, List[str]]:
         try:
             track = spotify.track(uri)
@@ -457,20 +441,3 @@ class PluginException(BaseException):
 
 class InnenTudodHogyJoException(PluginException):
     pass
-
-
-if __name__ == '__main__':
-    with open('youtube_links.txt') as f:
-        for line in f:
-            line = line.replace('\n', '')
-            try:
-                print('------------------------------')
-                print(line)
-                print('YouTube:', Youtube.get_title_and_artists(line))
-                spotify_uri = convert_uri(line)
-                print('Spotify:', Spotify.get_title_and_artists(spotify_uri[1]))
-                print(*spotify_uri)
-            except InnenTudodHogyJoException:
-                print('EZ NINCS MEG', line)
-            except PluginException:
-                print('Ez meg nem jó', line)
