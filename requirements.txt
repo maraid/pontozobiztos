@@ -9,4 +9,3 @@ unidecode
 fuzzywuzzy
 # tensorflow
 spotipy
-ytmusicapi

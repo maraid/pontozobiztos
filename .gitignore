@@ -3,6 +3,7 @@ cookies
 cookie
 test.py
 fbchat/
+.env
 
 # kakiefier stuff
 images/
