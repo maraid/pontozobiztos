@@ -3,6 +3,9 @@ chat functions are defined here, but feel free to write your own
 queries or use different collections.
 """
 
+from dotenv import load_dotenv
+load_dotenv()
+
 import pymongo
 from datetime import datetime
 import logging

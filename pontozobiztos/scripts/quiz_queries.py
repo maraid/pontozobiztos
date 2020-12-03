@@ -40,13 +40,13 @@ def _first_message_from_each_user():
     msg_col = chatmongo.get_message_collection()
     ret = msg_col.aggregate(
         [
-            {"$sort": {"timestamp": 1}},
+            {"$sort": {"created_at": 1}},
             {"$group":
                 {
                     "_id": "$author",
-                    "timestamp": {"$first": "$created_at"}
+                    "created_at": {"$first": "$created_at"}
                 }},
-            {"$sort": {"timestamp": 1}},
+            {"$sort": {"created_at": 1}},
             {"$lookup":
                 {
                     "from": "users",
@@ -59,7 +59,7 @@ def _first_message_from_each_user():
                 "$replaceWith":
                     {
                         "_id": "$_id",
-                        "timestamp": "$timestamp",
+                        "created_at": "$created_at",
                         "fullname": "$user_data.fullname"
                     }
             }
@@ -73,7 +73,7 @@ def who_joined_last_3():
     print_title("\nLast 3 joined")
     users = _first_message_from_each_user()[-3:]
     for i, user in enumerate(reversed(users)):
-        print(str(i + 1) + ". " + user.get("fullname") + ": " + str(user.get("timestamp")))
+        print(str(i + 1) + ". " + user.get("fullname") + ": " + str(user.get("created_at")))
 
 
 def _number_of_reacts_per_user():
@@ -269,34 +269,34 @@ def kicsekkjel_count():
 
 if __name__ == "__main__":
 
-    print_most_messages_top3()
+    # print_most_messages_top3()
 
 
     who_joined_last_3()
 
 
-    who_sent_the_most_reacts_top3()
-
-
-    print_who_received_the_most_reacts_top3()
-
-
-    print_who_received_the_most_reacts_top3("ANGRY")
-
-    print("\nMost sad reacts received TOP3")
-    print_who_received_the_most_reacts_top3("SAD")
-
-    print("\nMost <3 reacts received TOP3")
-    print_who_received_the_most_reacts_top3("HEART")
-
-    print("\nMost smile reacts received TOP3")
-    print_who_received_the_most_reacts_top3("SMILE")
-
-    print("\nkicsekk count")
-    print(kicsekk_count())
-
-    print("\nkicsekkjel count")
-    print(kicsekkjel_count())
+    # who_sent_the_most_reacts_top3()
+    #
+    #
+    # print_who_received_the_most_reacts_top3()
+    #
+    #
+    # print_who_received_the_most_reacts_top3("ANGRY")
+    #
+    # print("\nMost sad reacts received TOP3")
+    # print_who_received_the_most_reacts_top3("SAD")
+    #
+    # print("\nMost <3 reacts received TOP3")
+    # print_who_received_the_most_reacts_top3("HEART")
+    #
+    # print("\nMost smile reacts received TOP3")
+    # print_who_received_the_most_reacts_top3("SMILE")
+    #
+    # print("\nkicsekk count")
+    # print(kicsekk_count())
+    #
+    # print("\nkicsekkjel count")
+    # print(kicsekkjel_count())
 
     # who_sent_the_most_reacts()
 
