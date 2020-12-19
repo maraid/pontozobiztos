@@ -441,3 +441,7 @@ class PluginException(BaseException):
 
 class InnenTudodHogyJoException(PluginException):
     pass
+
+
+if __name__ == '__main__':
+    print(convert_uri('https://www.youtube.com/watch?v=f2YnVxGIhvA&fbclid=IwAR0-zEtiyAhKX0clD29C4wqYbQGUlYT0mhskz25P6uZDHBpwEhzPPnM-E68'))

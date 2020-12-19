@@ -52,12 +52,12 @@ def daily_links(day):
 
     links = mongo_functions.get_daily_links(day)
     print(links)
-    return render_template('links.html', content=links)  
+    return render_template('temp.html', content=links)
 
 
 
 
-# @app.route("/links")
+# @app.route("/temp")
 # def links_
 
 

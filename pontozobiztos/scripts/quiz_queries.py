@@ -272,8 +272,8 @@ if __name__ == "__main__":
     # print_most_messages_top3()
 
 
-    who_joined_last_3()
-
+    # who_joined_last_3()
+    # print(_most_reacts_received_toplist())
 
     # who_sent_the_most_reacts_top3()
     #
@@ -300,5 +300,5 @@ if __name__ == "__main__":
 
     # who_sent_the_most_reacts()
 
-    # print([x for x in _count_reacts_per_message(get_image_filter())])
+    print([x for x in _count_reacts_per_message(get_image_filter())])
     # print([x for x in _count_reacts_per_message(get_text_filter())])
