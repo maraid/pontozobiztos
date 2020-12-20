@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 import os
 import pathlib
@@ -86,3 +86,14 @@ def get_image_path(created_at, author, attachment_id, ext):
                                 author,
                                 attachment_id))
                       + '.' + ext)
+
+
+def year_start_end(year: int = None):
+    year = year or datetime.today().year
+    start = datetime(year, 1, 1, 0, 0, 0, 0)
+    end = datetime(year, 12, 31, 23, 59, 59, 999999)
+    return start, end
+
+
+def day_of_year_to_date(year, day_of_year: int):
+    return datetime(year, 1, 1) + timedelta(day_of_year - 1)
