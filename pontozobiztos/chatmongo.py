@@ -76,6 +76,7 @@ def get_user_info(user_id):
                                'fullname': 1,
                                'nickname': 1,
                                'last_read_at': 1,
+                               'profile_picture': 1,
                                'is_admin': 1
                                }
                               ).next()
@@ -96,13 +97,14 @@ def get_user_ids():
         return []
 
 
-def update_or_add_user(user_id, fullname, nickname, last_read_at=None):
+def update_or_add_user(user_id, fullname, nickname, profile_picture, last_read_at=None):
     """Adds a new user to the db if not exists already.
 
     Args:
         user_id (str): facebook user_id
         nickname (str): Chat nickname
         fullname (str): fullname of user
+        profile_picture (str): profile picture uri
         last_read_at (datetime): last date when the thread was
             read by the user. (Epoch by default)
 
@@ -115,6 +117,7 @@ def update_or_add_user(user_id, fullname, nickname, last_read_at=None):
                                   {'$set': {
                                     'fullname': fullname,
                                     'nickname': nickname,
+                                    'profile_picture': profile_picture,
                                     'last_read_at': last_read_at,
                                     'is_admin': False
                                   },

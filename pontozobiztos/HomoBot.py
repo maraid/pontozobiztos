@@ -266,7 +266,8 @@ class HomoBot(fbchat.Session):
         ids = [p.id for p in self.group.participants]
         return [(key,
                  data['name'],
-                 self.group.nicknames[key])
+                 self.group.nicknames[key],
+                 data['profile_picture']['uri'])
                 for key, data in client._fetch_info(*ids).items()]
 
     def update_users(self):
