@@ -2,11 +2,11 @@ from datetime import datetime
 import numpy as np
 import matplotlib.pyplot as plt
 
-from pontozobiztos.scripts.statistics.messages_per_user import get_messages_per_user_by_year
-from pontozobiztos.scripts.statistics.regex_per_user import get_regex_sent_count_per_user
+from .messages_per_user import get_messages_per_user_by_year
+from .regex_per_user import get_regex_sent_count_per_user
 
 
-def plot(regex, year: int = None):
+def _plot(regex, title, year: int = None):
     year = year or datetime.today().year
     sent = get_messages_per_user_by_year(year)
     matched = get_regex_sent_count_per_user(regex, year)
@@ -22,13 +22,22 @@ def plot(regex, year: int = None):
     values = [i['rate'] for i in result]
     y_pos = np.arange(len(labels))
 
+    # fig, ax = plt.subplots(nrows=1, ncols=1)
     plt.rcdefaults()
-    plt.barh(y_pos, values, align='center', alpha=0.5)
+    plt.barh(y_pos, values, align='center', alpha=0.5, color='xkcd:teal')
     plt.yticks(y_pos, labels)
-    # plt.title(f'{title} ({year})')
+    plt.title(f'{title} ({year})')
+    # plt.set_facecolor('xkcd:salmon')
     plt.subplots_adjust(left=0.3)
-    plt.show()
+    plt.savefig(f'results/regex_rate_{"-".join(regex)}.png')
+    plt.close()
+    # plt.show()
+
+
+def plot(year: int = None):
+    _plot(['^[^ ]+$'], '(egyszavas üzenet)/(összes üzenet)', year)
+
 
 
 if __name__ == '__main__':
-    plot(['^[ ]*$'])
+    _plot(['^[^ ]+$'])  # one word

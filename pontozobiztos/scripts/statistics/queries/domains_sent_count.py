@@ -46,11 +46,13 @@ def plot(year: int = None):
     y_pos = np.arange(len(labels))
     values = [i[1] for i in first_20_and_other]
 
-    plt.barh(y_pos, values, align='center', alpha=0.5)
+    plt.barh(y_pos, values, align='center', alpha=0.5, color='xkcd:seafoam')
     plt.yticks(y_pos, labels)
     plt.title(f'Leggyakrabban linkelt oldalak ({year})')
     plt.subplots_adjust(left=0.3)
-    plt.show()
+    plt.savefig('results/domains_sent_count.png')
+    plt.close()
+    # plt.show()
 
 
 if __name__ == '__main__':

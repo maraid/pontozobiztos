@@ -47,11 +47,13 @@ def plot(year: int = None):
     y_pos = np.arange(len(labels))
     values = [i['document_count'] for i in result]
 
-    plt.barh(y_pos, values, align='center', alpha=0.5)
+    plt.barh(y_pos, values, align='center', alpha=0.5, color='xkcd:dusty blue')
     plt.yticks(y_pos, labels)
     plt.title(f'Üzenetek száma per fő ({year})')
     plt.subplots_adjust(left=0.3)
-    plt.show()
+    plt.savefig('results/messages_per_user.png')
+    plt.close()
+    # plt.show()
 
 
 if __name__ == '__main__':

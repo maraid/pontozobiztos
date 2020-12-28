@@ -52,10 +52,12 @@ def plot(year: int = None):
     values = [i['document_count'] for i in result]
     y_pos = np.arange(len(values))
 
-    plt.bar(y_pos, values, align='center', alpha=0.5, width=1.0)
+    plt.bar(y_pos, values, align='center', alpha=0.5, width=1.0, color='xkcd:light orange')
     plt.xticks(xpos, labels)
     plt.title(f'Üzenetek száma napok szerint ({year})')
-    plt.show()
+    plt.savefig('results/messages_per_day.png')
+    plt.close()
+    # plt.show()
 
 
 if __name__ == '__main__':

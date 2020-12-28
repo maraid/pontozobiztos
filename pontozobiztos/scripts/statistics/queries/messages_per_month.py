@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from datetime import datetime
 
 from pontozobiztos import chatmongo
 from pontozobiztos import utils
@@ -22,8 +23,9 @@ def _get_messages_per_month(start, end) -> list:
     return list(result)
 
 
-def plot(year):
+def plot(year: int = None):
     plt.rcdefaults()
+    year = year or datetime.today().year
     result = get_messages_per_month_by_year(year)
     months = ('Jan', 'Febr', 'Már', 'Ápr', 'Máj', 'Jún',
               'Júl', 'Aug', 'Szept', 'Okt', 'Nov',
@@ -32,13 +34,15 @@ def plot(year):
     values = [i['document_count'] for i in result]
     values += [0] * (12 - len(result))
 
-    plt.bar(y_pos, values, align='center', alpha=0.5)
+    plt.bar(y_pos, values, align='center', alpha=0.5, color='xkcd:brownish orange')
     plt.xticks(y_pos, months)
     plt.title(f'Üzenetek száma hónapok szerint ({year})')
     for i, v in enumerate(values):
         plt.text(i, max(values) * 0.02, str(v),
                  horizontalalignment="center", rotation=90)
-    plt.show()
+    plt.savefig('results/messages_per_month.png')
+    plt.close()
+    # plt.show()
 
 
 if __name__ == '__main__':

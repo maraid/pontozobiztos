@@ -32,12 +32,14 @@ def plot(year: int = None):
     values = [i['document_count'] / 365 for i in result]
     y_pos = np.arange(len(values))
 
-    plt.bar(y_pos, values, align='center', alpha=0.5)
+    plt.bar(y_pos, values, align='center', alpha=0.5, color='xkcd:sky')
     plt.xticks(y_pos, labels)
     plt.xlabel('Óra')
     plt.ylabel('Üzenet átlagos száma')
-    plt.title(f'Üzenetek száma órákra bontva ({year})')
-    plt.show()
+    plt.title(f'Üzenetek átalgos száma órákra bontva ({year})')
+    plt.savefig('results/messages_per_hour_average.png')
+    plt.close()
+    # plt.show()
 
 
 if __name__ == '__main__':
