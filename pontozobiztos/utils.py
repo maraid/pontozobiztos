@@ -5,6 +5,9 @@ import pathlib
 import glob
 from PIL import Image
 import imagehash
+import logging
+
+log = logging.getLogger('chatbot')
 
 
 def get_season_start():
@@ -90,5 +93,7 @@ def get_saved_image_path(attachment_id):
 def hash_image(image_path: str, hashing_algorithm='phash', **kwargs) -> str:
     image = Image.open(image_path)
     if hashing_algorithm == 'phash':
-        return imagehash.phash(image, **kwargs)
+        hash_ = imagehash.phash(image, **kwargs)
+        log.info(f'Calculated hash for {image_path}: {hash_}')
+        return hash_
 
