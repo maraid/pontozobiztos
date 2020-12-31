@@ -585,7 +585,7 @@ def save_audio(audio_attachment: fbchat.AudioAttachment,
     fpath = img_dir / ('_'.join((created_at.strftime('%Y%m%d%H%M%S'),
                                  'u' + author,
                                  mid,
-                                 'a' + audio_attachment.id)) + '.mp3')
+                                 'a' + audio_attachment.id or 'udio')) + '.mp3')
 
     img = requests.get(audio_attachment.url, timeout=5)
     open(fpath, 'wb').write(img.content)
