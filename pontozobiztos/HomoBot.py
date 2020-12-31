@@ -278,10 +278,13 @@ class HomoBot(fbchat.Session):
             chatmongo.update_or_add_user(*ud)
 
     def sync_database(self):
-        latest_msg_ts = chatmongo.get_latest_message().created_at
+        try:
+            latest_msg_ts = chatmongo.get_latest_message().created_at
+        except StopIteration:
+            latest_msg_ts = 0
         before = datetime.now(tz=utc)
         while before > latest_msg_ts:
-            data = self.group._fetch_messages(100, before)
+            data = self.group._fetch_messages(1000, before)
             for msg in data:
                 chatmongo.insert_or_update_message(msg)
             before = data[0].created_at
