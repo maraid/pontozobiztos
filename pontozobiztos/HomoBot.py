@@ -281,11 +281,13 @@ class HomoBot(fbchat.Session):
         try:
             latest_msg_ts = chatmongo.get_latest_message().created_at
         except StopIteration:
-            latest_msg_ts = 0
+            latest_msg_ts = datetime(year=2000, month=1, day=1, tzinfo=utc)
         before = datetime.now(tz=utc)
         while before > latest_msg_ts:
             data = self.group._fetch_messages(1000, before)
+            if not data:
+                break
             for msg in data:
                 chatmongo.insert_or_update_message(msg)
             before = data[0].created_at
-            time.sleep(random.uniform(0, 3))
+            # time.sleep(random.uniform(0, 3))

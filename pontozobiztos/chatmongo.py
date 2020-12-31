@@ -511,7 +511,7 @@ def save_image(image_attachment: fbchat.ImageAttachment,
 
     fpath = img_dir / ('_'.join((created_at.strftime('%Y%m%d%H%M%S'),
                                  'u' + author,
-                                 'm' + mid,
+                                 mid,
                                  'a' + image_attachment.id))
                        + '.' + image_attachment.original_extension)
 
@@ -520,7 +520,7 @@ def save_image(image_attachment: fbchat.ImageAttachment,
     img = requests.get(largest_image.url, timeout=5)
     open(fpath, 'wb').write(img.content)
     logger.info(f"Image saved to path: {fpath}")
-    return fpath
+    return str(fpath)
 
 
 def save_video(video_attachment: fbchat.VideoAttachment,
@@ -549,13 +549,13 @@ def save_video(video_attachment: fbchat.VideoAttachment,
 
     fpath = img_dir / ('_'.join((created_at.strftime('%Y%m%d%H%M%S'),
                                  'u' + author,
-                                 'm' + mid,
+                                 mid,
                                  'a' + video_attachment.id)) + '.mp4')
 
     vid = requests.get(video_attachment.preview_url, timeout=5)
     open(fpath, 'wb').write(vid.content)
     logger.info(f"Video saved to path: {fpath}")
-    return fpath
+    return str(fpath)
 
 
 def save_audio(audio_attachment: fbchat.AudioAttachment,
@@ -584,13 +584,13 @@ def save_audio(audio_attachment: fbchat.AudioAttachment,
 
     fpath = img_dir / ('_'.join((created_at.strftime('%Y%m%d%H%M%S'),
                                  'u' + author,
-                                 'm' + mid,
+                                 mid,
                                  'a' + audio_attachment.id)) + '.mp3')
 
     img = requests.get(audio_attachment.url, timeout=5)
     open(fpath, 'wb').write(img.content)
     logger.info(f"Audio saved to path: {fpath}")
-    return fpath
+    return str(fpath)
 
 
 def serialize_mentions(*mentions):
@@ -611,7 +611,7 @@ def serialize_attachments(message: fbchat.Message):
                 'original_url': att.original_url
             })
         elif isinstance(att, ImageAttachment):
-            fpath = save_image(att, message.created_at, message.author, message.id)
+            fpath = save_image(att, message.created_at, message.id, message.author)
             img_hash = utils.hash_image(str(fpath))
             largest_image = sorted(list(att.previews), key=lambda i: i.width or 0)[-1]
             att_dict.update({
@@ -624,18 +624,18 @@ def serialize_attachments(message: fbchat.Message):
                 'image_hash': img_hash
             })
         elif isinstance(att, fbchat.VideoAttachment):
-            fpath = save_video(att, message.created_at, message.author, message.id)
+            fpath = save_video(att, message.created_at, message.id, message.author)
             att_dict['type'] = 'video'
             att_dict['width'] = att.width
             att_dict['height'] = att.height
-            att_dict['duration'] = att.duration
+            att_dict['duration'] = att.duration.total_seconds()
             att_dict['size'] = att.size  # in bytes
             att_dict['path'] = fpath
         elif isinstance(att, fbchat.AudioAttachment):
-            fpath = save_audio(att, message.created_at, message.author, message.id)
+            fpath = save_audio(att, message.created_at, message.id, message.author)
             att_dict['type'] = 'audio'
             att_dict['filename'] = att.filename
-            att_dict['duration'] = att.duration
+            att_dict['duration'] = att.duration.total_seconds()
             att_dict['audio_type'] = att.audio_type
             att_dict['path'] = fpath
         else:
