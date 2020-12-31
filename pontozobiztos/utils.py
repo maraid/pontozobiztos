@@ -2,6 +2,9 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 import os
 import pathlib
+import glob
+from PIL import Image
+import imagehash
 
 
 def get_season_start():
@@ -68,21 +71,24 @@ def get_monogram(name):
     return '.'.join(n[0] for n in name.split(' ')) + '.'
 
 
-def get_image_path(created_at, author, attachment_id, ext):
+def get_saved_image_path(attachment_id):
     """Generates a list of paths for a message object where the images
     are (or will be) stored
 
     Args:
-        created_at (datetime):
-        author (str):
         attachment_id (str):
-        ext (str):
     Returns:
         pathlib.Path: List of paths of images in message
     """
     img_dir = pathlib.Path(os.getenv("IMAGE_DIRECTORY"))
-    img_dir.mkdir(exist_ok=True)
-    return img_dir / ('_'.join((created_at.strftime('%Y%m%d%H%M%S'),
-                                author,
-                                attachment_id))
-                      + '.' + ext)
+    image_matches = [x for x in glob.glob(str(img_dir) + '/*a' + attachment_id + '*')]
+    if (li := len(image_matches)) != 1:
+        raise FileNotFoundError(f'Found {li} images with attachment id: {attachment_id}. Expected 1')
+    return pathlib.Path(image_matches[0])
+
+
+def hash_image(image_path: str, hashing_algorithm='phash', **kwargs) -> str:
+    image = Image.open(image_path)
+    if hashing_algorithm == 'phash':
+        return imagehash.phash(image, **kwargs)
+

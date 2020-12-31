@@ -11,7 +11,7 @@ from datetime import datetime
 import logging
 from pontozobiztos import utils
 import fbchat
-from fbchat import ShareAttachment, ImageAttachment, Mention, Attachment, MessageData, Message, Image
+from fbchat import ShareAttachment, ImageAttachment, Mention, Attachment, MessageData, Message, Image, AudioAttachment, VideoAttachment
 import requests
 import pytz
 import os
@@ -394,8 +394,25 @@ def deserialize_attachments(*attachments):
                     width=att.get('large_preview_width'))
                 },
             )
+        elif att.get('type') == 'audio':
+            att_obj = AudioAttachment(
+                id=att.get('uid'),
+                filename=att.get('filename'),
+                duration=att.get('duration'),
+                audio_type=att.get('audio_type'),
+                url=att.get('path')
+            )
+        elif att.get('type') == 'video':
+            att_obj = VideoAttachment(
+                id=att.get('uid'),
+                size=att.get('size'),
+                width=att.get('width'),
+                height=att.get('height'),
+                duration=att.get('duration'),
+                preview_url=att.get('path'),
+            )
         else:
-            att_obj = Attachment()
+            att_obj = Attachment(id=att.get('uid'))
         rtn.append(att_obj)
     return rtn
 
@@ -468,40 +485,10 @@ def get_messages_by_mid(*mids):
             message_coll.find({'_id': {'$in': mids}})]
 
 
-def serialize_mentions(*mentions):
-    return {mention.thread_id: {
-        'offset': mention.offset,
-        'length': mention.length
-    } for mention in mentions}
-
-
-def serialize_attachments(*attachments):
-    rtn = []
-    for att in attachments:
-        att_dict = {'uid': att.id}
-        if isinstance(att, ShareAttachment):
-            att_dict.update({
-                'type': 'share',
-                'title': att.title,
-                'original_url': att.original_url
-            })
-        elif isinstance(att, ImageAttachment):
-            largest_image = sorted(list(att.previews), key=lambda i: i.width or 0)[-1]
-            att_dict.update({
-                'type': 'image',
-                'path': (att.path if hasattr(att, 'path') else None),
-                'original_extension': att.original_extension,
-                'preview_url': largest_image.url,
-                'preview_height': largest_image.height,
-                'preview_width': largest_image.width
-            })
-        else:  # TODO: do the rest?!
-            att_dict['type'] = 'other'
-        rtn.append(att_dict)
-    return rtn
-
-
-def save_images(message_object):
+def save_image(image_attachment: fbchat.ImageAttachment,
+               created_at: datetime,
+               mid: str,
+               author: str):
     """Save images found in a Message object. The path that the
     image is saved to is stored back into the message_object in the
     ImageAttachment as 'path'.
@@ -510,23 +497,151 @@ def save_images(message_object):
         YYYYmmddHHMMSS_<user_id>_<attachment_id>.<ext>
 
     Args:
-        message_object (fbchat.Message): fbchat.Message object
+        image_attachment (fbchat.ImageAttachment): fbchat.Message object
+        mid (str): facebook message_id
+        created_at (datetime): datetime when the message containing
+         this attachment was sent
+        author (str): facebook user_id
 
     Returns:
         None
     """
-    # TODO: better config file perhaps?!
-    for att in message_object.attachments:
-        if isinstance(att, fbchat.ImageAttachment) \
-                and att.original_extension in ('jpg', 'jpeg', 'png'):
-            fpath = utils.get_image_path(message_object.created_at,
-                                         message_object.author,
-                                         att.id,
-                                         att.original_extension)
+    img_dir = pathlib.Path(os.getenv("IMAGE_DIRECTORY"))
+    img_dir.mkdir(exist_ok=True)
+
+    fpath = img_dir / ('_'.join((created_at.strftime('%Y%m%d%H%M%S'),
+                                 'u' + author,
+                                 'm' + mid,
+                                 'a' + image_attachment.id))
+                       + '.' + image_attachment.original_extension)
+
+    largest_image = sorted(list(image_attachment.previews),
+                           key=lambda i: i.width or 0)[-1]
+    img = requests.get(largest_image.url, timeout=5)
+    open(fpath, 'wb').write(img.content)
+    logger.info(f"Image saved to path: {fpath}")
+    return fpath
+
+
+def save_video(video_attachment: fbchat.VideoAttachment,
+               created_at: datetime,
+               mid: str,
+               author: str):
+    """Save images found in a Message object. The path that the
+    image is saved to is stored back into the message_object in the
+    ImageAttachment as 'path'.
+
+    filename format:
+        YYYYmmddHHMMSS_<user_id>_<attachment_id>.<ext>
+
+    Args:
+        video_attachment (fbchat.VideoAttachment): fbchat.Message object
+        mid (str): facebook message_id
+        created_at (datetime): datetime when the message containing
+         this attachment was sent
+        author (str): facebook user_id
+
+    Returns:
+        None
+    """
+    img_dir = pathlib.Path(os.getenv("VIDEO_DIRECTORY"))
+    img_dir.mkdir(exist_ok=True)
+
+    fpath = img_dir / ('_'.join((created_at.strftime('%Y%m%d%H%M%S'),
+                                 'u' + author,
+                                 'm' + mid,
+                                 'a' + video_attachment.id)) + '.mp4')
+
+    vid = requests.get(video_attachment.preview_url, timeout=5)
+    open(fpath, 'wb').write(vid.content)
+    logger.info(f"Video saved to path: {fpath}")
+    return fpath
+
+
+def save_audio(audio_attachment: fbchat.AudioAttachment,
+               created_at: datetime,
+               mid: str,
+               author: str):
+    """Save images found in a Message object. The path that the
+    image is saved to is stored back into the message_object in the
+    ImageAttachment as 'path'.
+
+    filename format:
+        YYYYmmddHHMMSS_<user_id>_<attachment_id>.<ext>
+
+    Args:
+        audio_attachment (fbchat.AudioAttachment): fbchat.Message object
+        mid (str): facebook message_id
+        created_at (datetime): datetime when the message containing
+         this attachment was sent
+        author (str): facebook user_id
+
+    Returns:
+        None
+    """
+    img_dir = pathlib.Path(os.getenv("AUDIO_DIRECTORY"))
+    img_dir.mkdir(exist_ok=True)
+
+    fpath = img_dir / ('_'.join((created_at.strftime('%Y%m%d%H%M%S'),
+                                 'u' + author,
+                                 'm' + mid,
+                                 'a' + audio_attachment.id)) + '.mp3')
+
+    img = requests.get(audio_attachment.url, timeout=5)
+    open(fpath, 'wb').write(img.content)
+    logger.info(f"Audio saved to path: {fpath}")
+    return fpath
+
+
+def serialize_mentions(*mentions):
+    return {mention.thread_id: {
+        'offset': mention.offset,
+        'length': mention.length
+    } for mention in mentions}
+
+
+def serialize_attachments(message: fbchat.Message):
+    rtn = []
+    for att in message.attachments:
+        att_dict = {'uid': att.id}
+        if isinstance(att, ShareAttachment):
+            att_dict.update({
+                'type': 'share',
+                'title': att.title,
+                'original_url': att.original_url
+            })
+        elif isinstance(att, ImageAttachment):
+            fpath = save_image(att, message.created_at, message.author, message.id)
+            img_hash = utils.hash_image(str(fpath))
             largest_image = sorted(list(att.previews), key=lambda i: i.width or 0)[-1]
-            img = requests.get(largest_image.url, timeout=5)
-            open(fpath, 'wb').write(img.content)
-            logger.info(f"Image saved to path: {fpath}")
+            att_dict.update({
+                'type': 'image',
+                'path': fpath,
+                'original_extension': att.original_extension,
+                'preview_url': largest_image.url,
+                'preview_height': largest_image.height,
+                'preview_width': largest_image.width,
+                'image_hash': img_hash
+            })
+        elif isinstance(att, fbchat.VideoAttachment):
+            fpath = save_video(att, message.created_at, message.author, message.id)
+            att_dict['type'] = 'video'
+            att_dict['width'] = att.width
+            att_dict['height'] = att.height
+            att_dict['duration'] = att.duration
+            att_dict['size'] = att.size  # in bytes
+            att_dict['path'] = fpath
+        elif isinstance(att, fbchat.AudioAttachment):
+            fpath = save_audio(att, message.created_at, message.author, message.id)
+            att_dict['type'] = 'audio'
+            att_dict['filename'] = att.filename
+            att_dict['duration'] = att.duration
+            att_dict['audio_type'] = att.audio_type
+            att_dict['path'] = fpath
+        else:
+            att_dict['type'] = 'other'
+        rtn.append(att_dict)
+    return rtn
 
 
 def insert_or_update_message(message_object):
@@ -536,7 +651,6 @@ def insert_or_update_message(message_object):
         message_object (Message): fbchat message object
     """
 
-    save_images(message_object)
     update = message_coll.update_one(
         {'_id': message_object.id},
         {'$set': {
@@ -548,7 +662,7 @@ def insert_or_update_message(message_object):
             # 'read_by': message_object.read_by,
             'reactions': message_object.reactions,
             'sticker': None,
-            'attachments': serialize_attachments(*message_object.attachments),
+            'attachments': serialize_attachments(message_object),
             'replied_to': message_object.replied_to.id if message_object.replied_to else None,
             'unsent': message_object.unsent,
          }},
