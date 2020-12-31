@@ -2,8 +2,8 @@ from datetime import datetime
 import numpy as np
 import matplotlib.pyplot as plt
 
-from .messages_per_user import get_messages_per_user_by_year
-from .regex_per_user import get_regex_sent_count_per_user
+from pontozobiztos.scripts.statistics.queries.messages_per_user import get_messages_per_user_by_year
+from pontozobiztos.scripts.statistics.queries.regex_per_user import get_regex_sent_count_per_user
 
 
 def _plot(regex, title, year: int = None):
@@ -29,15 +29,14 @@ def _plot(regex, title, year: int = None):
     plt.title(f'{title} ({year})')
     # plt.set_facecolor('xkcd:salmon')
     plt.subplots_adjust(left=0.3)
-    plt.savefig(f'results/regex_rate_{"-".join(regex)}.png')
-    plt.close()
-    # plt.show()
+    # plt.savefig(f'results/regex_rate_{"-".join(regex)}.png')
+    # plt.close()
+    plt.show()
 
 
 def plot(year: int = None):
-    _plot(['^[^ ]+$'], '(egyszavas üzenet)/(összes üzenet)', year)
-
+    _plot(['^[^ ]+ [^ ]+$'], '(egyszavas üzenet)/(összes üzenet)', year)
 
 
 if __name__ == '__main__':
-    _plot(['^[^ ]+$'])  # one word
+    _plot(['^[^ ]+ [^ ]+ [^ ]+$'], 'háromszavas per összes megvan a sweetspot amivel lehet mollit basztatni')  # one word

@@ -46,7 +46,7 @@ def _get_messages_per_user(start, end) -> list:
         del item['dayOfYear']
         del item['_id']
 
-    user_res = chatmongo.get_user_collection().find({})
+    user_res = list(chatmongo.get_user_collection().find({}))
     user_list = [x['fullname'] for x in user_res]
     user_count = len(user_list)
 
@@ -66,20 +66,35 @@ def _get_messages_per_user(start, end) -> list:
         item_in_sum = [x for x in sum_result[-user_count:] if x['fullname'] == item['fullname']][0]
         item_in_sum['count'] += item['document_count']
         cumulative_sums[item['fullname']] = item_in_sum['count']
-    return sum_result
+
+    another_result_dict = {x: [] for x in user_list}  # this one will act as a table for flourish
+
+    for item in sum_result:
+        another_result_dict[item['fullname']].append(item['count'])
+
+    date_list = sorted(list({x['date'] for x in sum_result}))
+    date_str_list = [x.strftime('%Y-%m-%d') for x in date_list]
+    with open('results/flourish.csv', 'w', encoding='utf-8') as f:
+        f.write(','.join(['Fullname', 'Image URL', *date_str_list]))
+        f.write('\n')
+        for name, count_list in another_result_dict.items():
+            image_url = [x['profile_picture'] for x in user_res if x['fullname'] == name][0]
+            f.write(','.join([name, image_url, *[str(i) for i in count_list]]))
+            f.write('\n')
+
 
 def export(year: int = None):
     year = year or datetime.today().year
     result = get_messages_per_user_by_year(year)
-
-    with open('results/bar_chart_race_data.csv', 'w', encoding="utf-8") as f:
-        for item in result:
-            f.write(', '.join([
-                item['date'].strftime('%Y-%m-%d'),
-                item['fullname'],
-                str(item['count'])
-            ]))
-            f.write('\n')
+    #
+    # with open('results/bar_chart_race_data.csv', 'w', encoding="utf-8") as f:
+    #     for item in result:
+    #         f.write(', '.join([
+    #             item['date'].strftime('%Y-%m-%d'),
+    #             item['fullname'],
+    #             str(item['count'])
+    #         ]))
+    #         f.write('\n')
 
     # plt.rcdefaults()
     # labels = [i['fullname'] for i in result]
