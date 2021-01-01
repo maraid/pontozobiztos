@@ -7,7 +7,7 @@ import random
 log = logging.getLogger('chatbot')
 
 
-THRESHOLD = 10
+THRESHOLD = 3
 
 all_hashes = []
 all_urls = {}
@@ -81,4 +81,10 @@ def get_all_urls():
 
 
 if __name__ == '__main__':
-    pass
+    from PIL import Image
+    init()
+    imghash = imagehash.phash(Image.open('com_join_us.jpg'))
+    similar = [(mid, h - imghash) for mid, h in all_hashes
+               if h - imghash <= THRESHOLD]
+    print(similar)
+
