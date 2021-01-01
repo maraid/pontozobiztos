@@ -6,7 +6,8 @@ enabled_plugins = [
     # "szerenchat",
     # "utility",
     "webapp_link_provider",
-    "link_mirror"
+    # "link_mirror",
+    "repost"
 ]
 
 __all__ = [p.name for p in pathlib.Path(__file__).parent.iterdir()
