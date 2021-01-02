@@ -47,7 +47,9 @@ def on_message(thread, author, message: fbchat.MessageData):
             if similar:
                 similar.sort(key=lambda x: x[1])
                 best_match = similar[0]
-                thread.send_text(random.choice(re_strings), reply_to_id=message.id)
+                best_count = len([x for x in similar if x[1] == best_match[1]])
+                thread.send_text(random.choice(re_strings) + f' {best_count}x',
+                                 reply_to_id=message.id)
                 thread.send_text('>', reply_to_id=best_match[0])
             all_hashes.append((message.id, imghash))
         return True
@@ -67,7 +69,7 @@ def get_all_hashes():
         {'$match': {'attachments.type': 'image'}},
         {'$replaceWith': {
             '_id': '$_id',
-            'hash': '$attachments.image_hash'
+            'hash': '$attachments.image_hash',
         }}
     ])
     return list(result)
@@ -83,8 +85,10 @@ def get_all_urls():
 if __name__ == '__main__':
     from PIL import Image
     init()
-    imghash = imagehash.phash(Image.open('asd.jpg'))
+    imghash = imagehash.phash(Image.open('20180920205858_u100001274083888_mid.$gAADTaOUX9sVsKgyfYFl-MdLnwIWo_a1937288356574368.jpg'))
     similar = [(mid, val) for mid, h in all_hashes
                if (val := h - imghash) <= THRESHOLD]
+
     print(similar)
+
 
