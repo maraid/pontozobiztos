@@ -41,8 +41,8 @@ def on_message(thread, author, message: fbchat.MessageData):
                 log.warning('No image attachment found. This shouldn\'t happen')
                 return False
             imghash = imagehash.hex_to_hash(db_att['image_hash'])
-            similar = [(mid, h - imghash) for mid, h in all_hashes
-                       if h - imghash <= THRESHOLD]
+            similar = [(mid, val) for mid, h in all_hashes
+                       if (val := h - imghash) <= THRESHOLD]
 
             if similar:
                 similar.sort(key=lambda x: x[1])
@@ -83,8 +83,8 @@ def get_all_urls():
 if __name__ == '__main__':
     from PIL import Image
     init()
-    imghash = imagehash.phash(Image.open('com_join_us.jpg'))
-    similar = [(mid, h - imghash) for mid, h in all_hashes
-               if h - imghash <= THRESHOLD]
+    imghash = imagehash.phash(Image.open('asd.jpg'))
+    similar = [(mid, val) for mid, h in all_hashes
+               if (val := h - imghash) <= THRESHOLD]
     print(similar)
 
