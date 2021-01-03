@@ -35,6 +35,9 @@ def on_message(thread, author, message: fbchat.MessageData):
         msg = get_msg_from_db(message.id)
         attachments = msg['attachments']
         for img in images:
+            if img.original_extension == 'gif':
+                continue
+
             try:
                 db_att = [x for x in attachments if x['uid'] == img.id][0]
             except IndexError:
