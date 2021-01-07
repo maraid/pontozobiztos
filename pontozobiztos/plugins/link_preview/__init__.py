@@ -23,9 +23,9 @@ def on_message(thread: fbchat.Group, author, message):
                 image_url = match.group(1) + image_url
         r = requests.get(image_url)
         files = client.upload([("placeholder.png", r.content, "image/png")])
-        thread.send_text(text=f'**{title}**\n{description}',
+        thread.send_text(text=f'*{title}*\n{description}',
                          files=files,
                          reply_to_id=message.id)
     else:
-        thread.send_text(text=f'**{title}**\n{description}',
+        thread.send_text(text=f'*{title}*\n{description}',
                          reply_to_id=message.id)
