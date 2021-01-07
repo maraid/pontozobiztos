@@ -3,7 +3,7 @@ from dateutil.relativedelta import relativedelta
 import os
 import pathlib
 import glob
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 import imagehash
 import logging
 
@@ -91,7 +91,10 @@ def get_saved_image_path(attachment_id):
 
 
 def hash_image(image_path: str, hashing_algorithm='phash', **kwargs) -> str:
-    image = Image.open(image_path)
+    try:
+        image = Image.open(image_path)
+    except UnidentifiedImageError:
+        return ''
     if hashing_algorithm == 'phash':
         hash_ = str(imagehash.phash(image, **kwargs))
         log.info(f'Calculated hash for {image_path}: {hash_}')

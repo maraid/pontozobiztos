@@ -43,7 +43,12 @@ def on_message(thread, author, message: fbchat.MessageData):
             except IndexError:
                 log.warning('No image attachment found. This shouldn\'t happen')
                 return False
-            imghash = imagehash.hex_to_hash(db_att['image_hash'])
+
+            try:
+                imghash = imagehash.hex_to_hash(db_att['image_hash'])
+            except ValueError:
+                continue
+
             similar = [(mid, val) for mid, h in all_hashes
                        if (val := h - imghash) <= THRESHOLD]
 
@@ -93,5 +98,3 @@ if __name__ == '__main__':
                if (val := h - imghash) <= THRESHOLD]
 
     print(similar)
-
-
