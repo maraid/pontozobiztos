@@ -11,7 +11,8 @@ def on_message(thread: fbchat.Group, author, message):
     client = fbchat.Client(session=thread.session)
     try:
         title, description, image_url = web_preview(
-            message.text, parser='html.parser', timeout=2000)
+            message.text, parser='html.parser', timeout=2000,
+            headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36'})
     except requests.exceptions.InvalidURL:
         return False
     except requests.exceptions.Timeout:
