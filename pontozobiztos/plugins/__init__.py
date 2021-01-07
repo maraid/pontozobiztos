@@ -5,9 +5,10 @@ enabled_plugins = [
     # "kakiefier",
     # "szerenchat",
     # "utility",
-    "webapp_link_provider",
+    # "webapp_link_provider",
     # "link_mirror",
-    "repost"
+    "repost",
+    "link_preview"
 ]
 
 __all__ = [p.name for p in pathlib.Path(__file__).parent.iterdir()

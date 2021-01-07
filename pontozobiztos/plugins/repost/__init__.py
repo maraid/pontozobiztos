@@ -29,7 +29,10 @@ def on_message(thread, author, message: fbchat.MessageData):
     if message.text.startswith('https://'):
         if mid := all_urls.get(message.text):
             thread.send_text(random.choice(re_strings), reply_to_id=message.id)
-            thread.send_text('>', reply_to_id=mid)
+            try:
+                thread.send_text('>', reply_to_id=mid)
+            except fbchat.InvalidParameters:
+                return True  # not in groupchat (debug)
         all_urls[message.text] = message.id
     elif images := [att for att in message.attachments
                     if isinstance(att, fbchat.ImageAttachment)]:

@@ -1,12 +1,18 @@
-APScheduler==3.6.3
+APScheduler
 git+https://github.com/maraid/fbchat
 git+https://github.com/maraid/ytmusicapi
-pymongo==3.9.0
-python-dateutil==2.8.1
-python-dotenv==0.10.3
+pymongo
+python-dateutil
+python-dotenv
 git+git://github.com/maraid/num2words@master#egg=num2words
 unidecode
 fuzzywuzzy
 # tensorflow
 spotipy
 imagehash
+
+Flask
+pytz
+Pillow
+requests
+webpreview
