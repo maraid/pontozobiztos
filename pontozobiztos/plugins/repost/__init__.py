@@ -18,7 +18,7 @@ re_strings = ['re', 'Re', 'RE', 'ree', 'REEEE', 'R E P O S T', 'repost',
 
 def init():
     for h in get_all_hashes():
-        if h:
+        if h['hash']:
             all_hashes.append((h['_id'], imagehash.hex_to_hash(h['hash'])))
     all_urls.update(get_all_urls())
     log.info(f'Initialized repost with {len(all_hashes)} image hashes'
