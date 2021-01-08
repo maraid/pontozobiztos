@@ -108,9 +108,6 @@ class HomoBot(fbchat.Session):
                 self.handle_event(event)
 
     def handle_event(self, event: fbchat._events.Event) -> bool:
-        if event.author.id == self.user.id:
-            return False
-
         if isinstance(event, fbchat.MessageEvent):
             thread = event.message.thread
             msg = event.message.fetch()
@@ -120,6 +117,10 @@ class HomoBot(fbchat.Session):
                 thread = self.group  # changes from Group to GroupData
                 chatmongo.insert_or_update_message(msg)
             elif thread.id != os.getenv('ADMIN_ID', ''):
+                return False
+
+            # don't run plugins on bot's messages
+            if event.author.id == self.user.id:
                 return False
 
             for mod in plugin_dict.values():
@@ -294,7 +295,7 @@ class HomoBot(fbchat.Session):
             latest_msg_ts = datetime(year=2000, month=1, day=1, tzinfo=utc)
         before = datetime.now(tz=utc)
         while before > latest_msg_ts:
-            data = self.group._fetch_messages(10, before)
+            data = self.group._fetch_messages(1000, before)
             if not data:
                 break
             for msg in data:
