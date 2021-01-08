@@ -28,9 +28,8 @@ def init():
 def on_message(thread, author, message: fbchat.MessageData):
     if message.text.startswith('https://'):
         if mid := all_urls.get(message.text):
-            thread.send_text(random.choice(re_strings), reply_to_id=message.id)
             try:
-                thread.send_text('>', reply_to_id=mid)
+                thread.send_text(random.choice(re_strings), reply_to_id=mid)
             except fbchat.InvalidParameters:
                 return True  # not in groupchat (debug)
         all_urls[message.text] = message.id
@@ -61,8 +60,7 @@ def on_message(thread, author, message: fbchat.MessageData):
                 best_match = similar[0]
                 best_count = len([x for x in similar if x[1] == best_match[1]])
                 thread.send_text(random.choice(re_strings) + f' {best_count}x',
-                                 reply_to_id=message.id)
-                thread.send_text('>', reply_to_id=best_match[0])
+                                 reply_to_id=best_match[0])
             all_hashes.append((message.id, imghash))
         return True
     else:

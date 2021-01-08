@@ -102,19 +102,24 @@ class HomoBot(fbchat.Session):
         listener = fbchat.Listener(session=self,
                                    chat_on=False,
                                    foreground=False)
+        logger.info('Listening...')
         for event in listener.listen():
-            self.handle_event(event)
+            if isinstance(event, fbchat.ThreadEvent):
+                self.handle_event(event)
 
     def handle_event(self, event: fbchat._events.Event) -> bool:
+        if event.author.id == self.user.id:
+            return False
+
         if isinstance(event, fbchat.MessageEvent):
             thread = event.message.thread
             msg = event.message.fetch()
             logger.info(msg)
             if thread.id == self.GROUP_ID:
+                return False  # COMMENT THIS
                 thread = self.group  # changes from Group to GroupData
                 chatmongo.insert_or_update_message(msg)
-                # return False  # COMMENT THIS
-            elif thread.id != self.user.id:
+            elif thread.id != os.getenv('ADMIN_ID', ''):
                 return False
 
             for mod in plugin_dict.values():
@@ -264,11 +269,16 @@ class HomoBot(fbchat.Session):
         client = fbchat.Client(session=self)
         self.group = next(client.fetch_thread_info([self.GROUP_ID]))
         ids = [p.id for p in self.group.participants]
-        return [(key,
-                 data['name'],
-                 self.group.nicknames[key],
-                 data['profile_picture']['uri'])
-                for key, data in client._fetch_info(*ids).items()]
+
+        user_data = []
+        for key, data in client._fetch_info(*ids).items():
+            try:
+                nickname = self.group.nicknames[key]
+            except KeyError:
+                nickname = ''
+            user_data.append((key, data['name'], nickname,
+                              data['profile_picture']['uri']))
+        return user_data
 
     def update_users(self):
         """Updates the database from Facebook
@@ -284,7 +294,7 @@ class HomoBot(fbchat.Session):
             latest_msg_ts = datetime(year=2000, month=1, day=1, tzinfo=utc)
         before = datetime.now(tz=utc)
         while before > latest_msg_ts:
-            data = self.group._fetch_messages(1000, before)
+            data = self.group._fetch_messages(10, before)
             if not data:
                 break
             for msg in data:
