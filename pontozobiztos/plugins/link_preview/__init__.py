@@ -7,6 +7,7 @@ import re
 def on_message(thread: fbchat.Group, author, message):
     if not message.text.startswith('https://') or \
        message.text.startswith('https://facebook.com') or \
+       message.text.startswith('https://www.facebook.com') or \
        message.text.startswith('https://m.facebook.com') or \
        message.text.startswith('https://music.youtube.com'):
         return False
