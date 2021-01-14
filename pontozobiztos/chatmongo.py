@@ -120,12 +120,12 @@ def update_or_add_user(user_id, fullname, nickname, profile_picture, last_read_a
                                     'nickname': nickname,
                                     'profile_picture': profile_picture,
                                     'last_read_at': last_read_at,
-                                    'is_admin': False,
-                                    'is_pontozo': False
                                   },
                                   '$setOnInsert': {
                                       'points': [],
-                                      'multipliers': []
+                                      'multipliers': [],
+                                      'is_admin': False,
+                                      'is_pontozo': False
                                   }},
                                   upsert=True)
 
