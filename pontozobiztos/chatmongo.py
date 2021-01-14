@@ -51,7 +51,7 @@ def get_user(user_id):
 
     Returns:
         dict: The matched user document from the db.
-            (None if not found)
+            (Empty dict if not found)
     """
     try:
         return user_coll.find({"_id": user_id}).next()

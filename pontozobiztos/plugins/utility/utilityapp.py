@@ -60,7 +60,28 @@ def points(thread, author, message, *args):
         message(fbchat.Message)
     """
     thread.send_text(f'Pontok: {str(author.points_sum)}\n'
-                     f'Szorzó: {str(author.multiplier)}')
+                     f'Szorzó: {str(author.multiplier)}',
+                     reply_to_id=message.id)
+    return True
+
+
+def points_all(thread, author, message, *args):
+    """Prints points for all
+    Args:
+        thread(fbchat.Thread)
+        author(User)
+        message(fbchat.Message)
+    """
+    user_ids = chatmongo.get_user_ids()
+    point_list = []
+    for uid in user_ids:
+        user = User(uid)
+        point_list.append((user.fullname, user.points_sum, user.multiplier))
+    point_list.sort(key=lambda x: x[1], reverse=True)
+    text = "Összesített pontok:\n"
+    for name, point, mult in point_list:
+        text += f'{name}: {point} pts - {mult}x\n'
+    thread.send_text(text, reply_to_id=message.id)
     return True
 
 
@@ -238,6 +259,12 @@ def help_(thread, author, message, *args):
 
 
 commands = [
+    {
+        'cmd': ['totalpoints', 'tp'],
+        'function': points_all,
+        'allowed_for': ['pontozo', 'admin'],
+        'help': 'Összes pont táblázatszerűen'
+    },
     {
         'cmd': ['addpoints', 'ap'],
         'function': add_points,
