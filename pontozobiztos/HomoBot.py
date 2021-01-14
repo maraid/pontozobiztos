@@ -118,7 +118,7 @@ class HomoBot(fbchat.Session):
 
             # message has to come from either the groupchat or an admin directly
             if thread.id == self.GROUP_ID:
-                return False  # COMMENT THIS
+                # return False  # COMMENT THIS
                 thread = self.group  # changes from Group to GroupData
                 chatmongo.insert_or_update_message(msg)
             elif not chatmongo.get_user_info(thread.id).get('is_admin', False):
