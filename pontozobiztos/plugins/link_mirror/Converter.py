@@ -8,6 +8,10 @@ import re
 from dotenv import load_dotenv
 load_dotenv()
 
+import logging
+
+log = logging.getLogger('chatbot.link_mirror')
+
 
 spotify = spotipy.Spotify(
     client_credentials_manager=SpotifyClientCredentials())
@@ -278,6 +282,8 @@ class YoutubeMusic(ConverterBase):
     @classmethod
     def get_url_from_data(cls, title: str, artists: List[str] = None) -> str:
         artists = artists or []
+        log.debug(f'Searching for YoutubeMusic. Title: {title};'
+                  f' Artists: {str(artists)}')
         res = ytmusic.search(' '.join([title, *artists]), filter="songs")
         if not res:
             raise PluginException("Could not find track on YouTube Music: "
@@ -425,14 +431,17 @@ class Spotify(ConverterBase):
 
 
 def convert_uri(uri: str) -> Union[List[str], None]:
+    log.info('Received URI: ' + uri)
+    result = []
     if Youtube.check_uri(uri):
-        return Youtube.convert(uri)
+        result = Youtube.convert(uri)
     elif YoutubeMusic.check_uri(uri):
-        return YoutubeMusic.convert(uri)
+        result = YoutubeMusic.convert(uri)
     elif Spotify.check_uri(uri):
-        return Spotify.convert(uri)
-    else:
-        return []
+        result = Spotify.convert(uri)
+
+    log.info('Converted list of URIs: ' + str(result))
+    return result
 
 
 class PluginException(BaseException):

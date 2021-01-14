@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 import os
 import pathlib
@@ -6,8 +6,9 @@ import glob
 from PIL import Image, UnidentifiedImageError
 import imagehash
 import logging
+import re
 
-log = logging.getLogger('chatbot')
+log = logging.getLogger('chatbot.utils')
 
 
 def get_season_start():
@@ -99,4 +100,37 @@ def hash_image(image_path: str, hashing_algorithm='phash', **kwargs) -> str:
         hash_ = str(imagehash.phash(image, **kwargs))
         log.info(f'Calculated hash for {image_path}: {hash_}')
         return hash_
+
+
+def replace_mentions(message) -> str:
+    replaced_text = message.text
+    offset_correction = 0
+    for mention in message.mentions:
+        replaced_text = replaced_text[:(mention.offset + offset_correction)] \
+                                      + str(mention.thread_id) \
+                                      + replaced_text[(mention.offset
+                                                       + offset_correction
+                                                       + mention.length):]
+        offset_correction += len(mention.thread_id) - mention.length
+    log.debug(f'Original text: "{message.text}" '
+              f'substituted text: "{replaced_text}"')
+    return replaced_text
+
+
+def parse_duration_to_expiration_date(duration):
+    days = hours = minutes = 0
+
+    match = re.search(r"(\d+)d", duration)
+    if match is not None:
+        days = int(match.group(1))
+
+    match = re.search(r"(\d+)h", duration)
+    if match is not None:
+        hours = int(match.group(1))
+
+    match = re.search(r"(\d+)m", duration)
+    if match is not None:
+        minutes = int(match.group(1))
+
+    return datetime.today() + timedelta(days=days, hours=hours, minutes=minutes)
 

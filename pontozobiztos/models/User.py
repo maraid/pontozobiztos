@@ -21,6 +21,8 @@ class User:
 
     def __init__(self, userid):
         self.uid = userid
+        if not chatmongo.get_user(userid):
+            raise ValueError(f'User id: {userid} is not found in db')
 
     def __repr__(self):
         attr_dict = {
@@ -65,6 +67,14 @@ class User:
     @property
     def is_admin(self):
         return chatmongo.get_user_info(self.uid).get("is_admin", False)
+
+    @property
+    def is_pontozo(self):
+        return chatmongo.get_user_info(self.uid).get("is_pontozo", False)
+
+    @is_pontozo.setter
+    def is_pontozo(self, value: bool):
+        chatmongo.update_info(self.uid, 'is_pontozo', value)
 
     @property
     def multiplier(self):

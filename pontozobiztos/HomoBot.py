@@ -53,6 +53,7 @@ for module in plugins.__all__:
 
 def init_plugins(*args, **kwargs):
     """Initializes plugins in    plugin_dict"""
+    logger.info("Initializing plugins...")
     for name, obj in plugin_dict.items():
         try:
             obj.init(*args, **kwargs)
@@ -90,11 +91,8 @@ class HomoBot(fbchat.Session):
             pickle.dump(self.get_cookies(), cookies)
         logger.debug("Cookies saved with pickle protocol")
 
-        logger.debug("Cross-checking facebook data with database")
         self.update_users()
-        logger.debug("Synchronizing database with facebook")
         self.sync_database()
-        logger.info("Initializing plugins...")
         init_plugins()
         return self
 
@@ -110,26 +108,33 @@ class HomoBot(fbchat.Session):
     def handle_event(self, event: fbchat._events.Event) -> bool:
         if isinstance(event, fbchat.MessageEvent):
             thread = event.message.thread
-            msg = event.message.fetch()
+            try:
+                msg = event.message.fetch()
+            except fbchat.HTTPError:
+                logger.warning('fbchat.Message.fetch() failed. trying again.')
+                msg = event.message.fetch()
+
             logger.info(msg)
+
+            # message has to come from either the groupchat or an admin directly
             if thread.id == self.GROUP_ID:
-                # return False  # COMMENT THIS
+                return False  # COMMENT THIS
                 thread = self.group  # changes from Group to GroupData
                 chatmongo.insert_or_update_message(msg)
-            elif thread.id != os.getenv('ADMIN_ID', ''):
+            elif not chatmongo.get_user_info(thread.id).get('is_admin', False):
                 return False
 
             # don't run plugins on bot's messages
-            if event.author.id == self.user.id:
+            if event.author.id != self.user.id:
+                for mod in plugin_dict.values():
+                    try:
+                        mod.on_message(thread=thread,
+                                       author=User.User(event.author.id),
+                                       message=msg)
+                    except (AttributeError, TypeError) as e:
+                        logger.warning(e)
+            else:
                 return False
-
-            for mod in plugin_dict.values():
-                try:
-                    mod.on_message(thread=thread,
-                                   author=User.User(msg.author),
-                                   message=msg)
-                except (AttributeError, TypeError):
-                    pass
         elif isinstance(event, fbchat.ThreadsRead):
             pass
         return False
@@ -285,18 +290,25 @@ class HomoBot(fbchat.Session):
         """Updates the database from Facebook
         (ID, username, nickname w/o points)
         """
+        logger.debug("Cross-checking facebook data with database")
         for ud in self.get_group_user_data():
             chatmongo.update_or_add_user(*ud)
 
+        admin_id = os.getenv('ADMIN_ID')
+        if admin_id is not None:
+            logger.debug(f"Setting admin state for {admin_id}")
+            chatmongo.update_info(admin_id, 'is_admin', True)
+
     def sync_database(self):
+        logger.debug("Synchronizing database with facebook")
         try:
             latest_msg_ts = chatmongo.get_latest_message().created_at
         except StopIteration:
             latest_msg_ts = datetime(year=2000, month=1, day=1, tzinfo=utc)
         before = datetime.now(tz=utc)
         while before > latest_msg_ts:
-            data = self.group._fetch_messages(1000, before)
-            if not data:
+            data = self.group._fetch_messages(200, before)
+            if len(data) == 1:  # reached the first message
                 break
             for msg in data:
                 chatmongo.insert_or_update_message(msg)

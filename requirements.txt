@@ -1,6 +1,6 @@
 APScheduler
 git+https://github.com/maraid/fbchat
-git+https://github.com/maraid/ytmusicapi
+git+https://github.com/sigma67/ytmusicapi.git
 pymongo
 python-dateutil
 python-dotenv

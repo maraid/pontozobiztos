@@ -56,7 +56,7 @@ def get_user(user_id):
     try:
         return user_coll.find({"_id": user_id}).next()
     except StopIteration:
-        return None
+        return {}
 
 
 def get_user_info(user_id):
@@ -77,11 +77,12 @@ def get_user_info(user_id):
                                'nickname': 1,
                                'last_read_at': 1,
                                'profile_picture': 1,
-                               'is_admin': 1
+                               'is_admin': 1,
+                               'is_pontozo': 1
                                }
                               ).next()
     except StopIteration:
-        return None
+        return {}
 
 
 def get_user_ids():
@@ -119,7 +120,8 @@ def update_or_add_user(user_id, fullname, nickname, profile_picture, last_read_a
                                     'nickname': nickname,
                                     'profile_picture': profile_picture,
                                     'last_read_at': last_read_at,
-                                    'is_admin': False
+                                    'is_admin': False,
+                                    'is_pontozo': False
                                   },
                                   '$setOnInsert': {
                                       'points': [],
@@ -255,7 +257,6 @@ def add_points(user_id, value, source, ts=None, mid=None, desc=""):
         bool: True if addition is successful, otherwise False
     """
     ts = ts or datetime.today()
-
     update = user_coll.update_one(
         {'_id': user_id},
         {'$push': {
@@ -268,6 +269,9 @@ def add_points(user_id, value, source, ts=None, mid=None, desc=""):
             }
         }}
     )
+    logger.info(f'Inserted {value} points for user {user_id}. '
+                f'Source: {source}. Timestamp: {ts}, Description: {desc}.'
+                f'MID: {mid}')
     return bool(update.modified_count)
 
 
