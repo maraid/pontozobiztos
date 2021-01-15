@@ -325,7 +325,7 @@ def on_message(thread, author, message):
         None
     """
     if not message.text or not message.text.startswith('!'):
-        return
+        return False
 
     # replace mention with user_id
     replaced_text = utils.replace_mentions(message)
