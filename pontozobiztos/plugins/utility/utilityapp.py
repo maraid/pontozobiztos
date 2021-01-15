@@ -332,6 +332,13 @@ def on_message(thread, author, message):
     replaced_text = replaced_text[1:]  # remove bang from start
     command_parts = replaced_text.split(' ')
     logger.debug(f'Command parts {str(command_parts)}')
+
+    command_list = []
+    for cmd in commands:
+        command_list += cmd['cmd']
+    if command_parts and command_parts[0] not in command_list:
+        return False
+
     try:
         selected_command = [x for x in commands if command_parts[0] in x['cmd']][0]
     except IndexError:

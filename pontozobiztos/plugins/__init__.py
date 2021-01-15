@@ -1,13 +1,13 @@
 import pathlib
 
 enabled_plugins = [
-    # "counting_game",
+    "counting_game",
     # "kakiefier",
-    # "szerenchat",
+    "szerenchat",
     "utility",
     # "webapp_link_provider",
     "link_mirror",
-    # "repost",
+    "repost",
     "link_preview"
 ]
 
