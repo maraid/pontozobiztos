@@ -16,7 +16,7 @@ def on_message(thread=None, author=None, message=None):
         author (User): pontozobiztos.models.User object
         message (fbchat.Message): Received fbchat.Message object
     """
-    if not message.text or message.text.startswith('!'):
+    if not message.text.startswith('!'):
         return False
 
     command = message.text[1:]
