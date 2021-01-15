@@ -19,47 +19,55 @@ def on_message(thread=None, author=None, message=None):
     if not message.text.startswith('!'):
         return False
 
-    command = message.text[1:]
-    command_list = ['fvi', 'fví', 'd6', 'k52', 'roll', 'lapot',
-                    'kő', 'ko', 'papír', 'papir', 'olló', 'ollo']
-    if command.split()[0] not in command_list:
+    logger.debug('Got potential szerenchat command: ' + message.text)
+
+    if match := re.search(r'!d(\d+)( (\d+))?', message.text):
+        func = dice
+        params = [
+            {
+                'name': 'sides',
+                'value': int(match.group(1)),
+                'limits': (2, 1000),
+            },
+            {
+                'name': 'count',
+                'value': int(match.group(3) or 1),
+                'limits': (1, 1000)
+            },
+        ]
+    elif match := re.search(r'!k52( (\d+))?', message.text):
+        func = k52_n
+        params = [
+            {
+                'name': 'count',
+                'value': int(match.group(2) or 1),
+                'limits': (1, 52)
+            }
+        ]
+    elif message.text == '!szerenchat':
+        thread.send_text('Elérhető szerenchat parancsok. () => optional:\n'
+                         'N oldalú dobókocka M-szer:\n!d<N> (M)\n\n'
+                         '52 lapos pakliból M db húzás:\n!k52 (M)')
+        return True
+    else:
         return False
 
-    if re.match(r'fv[ií]', command):
-        response = flip_a_coin()
-    elif match := re.match(r'fv[ií] +(\d+)', command):
-        n = int(match.group(1))
-        response = ', '.join(flip_n_coins(n))
-    elif re.match(r'^\s*d6\s*$', command):
-        response = str(d6())
-    elif match := re.match(r'^\s*d6 +(\d+)', command):
-        n = int(match.group(1))
-        response = ' '.join(str(n) for n in d6_n(n))
-    elif re.match(r'k52$', command) or re.match(r'lapot$', command):
-        response = k52()
-    elif match := re.match(r'k52 +(\d+)$', command):
-        n = int(match.group(1))
-        response = ' '.join(k52_n(n))
-    elif re.match(r'roll$', command):
-        response = roll()
-    elif match := re.match(r'roll +(\d+)$', command):
-        n = int(match.group(1))
-        response = ' '.join(str(x) for x in roll_n(n))
-    elif match := re.match(r'roll +(\d+) +(\d+)$', command):
-        a = int(match.group(1))
-        b = int(match.group(2))
-        response = roll(a, b)
-    elif match := re.match(r'roll +(\d+) +(\d+) +(\d+)$', command):
-        n = int(match.group(1))
-        a = int(match.group(2))
-        b = int(match.group(3))
-        response = ' '.join(str(x) for x in roll_n(n, a, b))
-    elif command in ('kő', 'ko', 'papír', 'papir', 'olló', 'ollo'):
-        response = rock_paper_scissors()
-    else:
-        response = "Invalid command format"
+    kwargs = {}
+    for p in params:
+        if p['value'] < p['limits'][0] or p['value'] > p['limits'][1]:
+            thread.send_text('You went full Ákos man. Never go full Ákos',
+                             reply_to_id=message.id)
+            return True
+        kwargs[p['name']] = p['value']
 
-    thread.send_text(response, reply_to_id=message.id)
+    try:
+        result = func(**kwargs)
+    except ValueError as e:
+        thread.send_text(str(e), reply_to_id=message.id)
+        return True
+
+    thread.send_text(str(' '.join(str(x) for x in result)),
+                     reply_to_id=message.id)
     return True
 
 
@@ -84,17 +92,8 @@ def flip_n_coins(n):
     return [flip_a_coin() for _ in range(n)]
 
 
-def d6():
-    """Rolls n times with 6 sided dice. Returns a list of the results
-
-    Returns:
-        List[int]: list of dice rolls
-    """
-    return random.randint(1, 6)
-
-
-def d6_n(n):
-    return [d6() for _ in range(n)]
+def dice(sides, count):
+    return [random.randint(1, sides) for _ in range(count)]
 
 
 SYMBOLS = ['♠', '♣', '♥', '♦']
@@ -112,7 +111,7 @@ def k52():
     return random.choice(SYMBOLS) + random.choice(NUMBERS)
 
 
-def k52_n(n, put_back=False):
+def k52_n(count, put_back=False):
     """Picks n cards from a 52 card deck. If put_back is True then the same
     card can be in the result multiple times.
 
@@ -123,13 +122,14 @@ def k52_n(n, put_back=False):
     Returns:
         List[str]: Cards picked
     """
-    if n > 52:
-        return ["Csak 52 kártya van te nyomi"]
+
     if put_back:
-        return [k52() for _ in range(n)]
+        return [k52() for _ in range(count)]
     else:
+        if count > 52:
+            raise ValueError(f'Az 52 lapos pakliból nem tudsz {count}-t húzni')
         hand = set()
-        while len(hand) != n:
+        while len(hand) != count:
             hand.add(k52())
         return list(hand)
 
