@@ -20,22 +20,22 @@ def on_message(thread=None, author=None, message=None):
         return False
 
     logger.debug('Got potential szerenchat command: ' + message.text)
-
-    if match := re.search(r'!d(\d+)( (\d+))?', message.text):
+    text = message.text.lower()
+    if match := re.search(r'!d(\d+)( +(\d+))?', text):
         func = dice
         params = [
             {
                 'name': 'sides',
                 'value': int(match.group(1)),
-                'limits': (2, 1000),
+                'limits': (1, 1_000_000),
             },
             {
                 'name': 'count',
                 'value': int(match.group(3) or 1),
-                'limits': (1, 1000)
+                'limits': (1, 100)
             },
         ]
-    elif match := re.search(r'!k52( (\d+))?', message.text):
+    elif match := re.search(r'!k52( +(\d+))?', text):
         func = k52_n
         params = [
             {
@@ -44,7 +44,7 @@ def on_message(thread=None, author=None, message=None):
                 'limits': (1, 52)
             }
         ]
-    elif message.text == '!szerenchat':
+    elif text == '!szerenchat':
         thread.send_text('Elérhető szerenchat parancsok. () => optional:\n'
                          'N oldalú dobókocka M-szer:\n!d<N> (M)\n\n'
                          '52 lapos pakliból M db húzás:\n!k52 (M)')

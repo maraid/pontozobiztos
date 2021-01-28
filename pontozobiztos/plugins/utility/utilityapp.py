@@ -330,7 +330,7 @@ def on_message(thread, author, message):
     # replace mention with user_id
     replaced_text = utils.replace_mentions(message)
     replaced_text = replaced_text[1:]  # remove bang from start
-    command_parts = replaced_text.split(' ')
+    command_parts = [x for x in replaced_text.split(' ') if x]
     logger.debug(f'Command parts {str(command_parts)}')
 
     command_list = []
