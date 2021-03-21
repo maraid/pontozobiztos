@@ -39,7 +39,11 @@ def on_message(thread: fbchat.Group, author, message):
     r = requests.get(image_url)
 
     files = client.upload([("foobar.png", r.content, "image/png")])
-    thread.send_text(text=f'*{title}*\n{description}',
-                     files=files,
-                     reply_to_id=message.id)
+    title = title + '\n' if title else ''
+    description = description + '\n' if description else ''
+
+    if title and image_url:
+        thread.send_text(text=f'*{title}*{description}',
+                         files=files,
+                         reply_to_id=message.id)
     return True
