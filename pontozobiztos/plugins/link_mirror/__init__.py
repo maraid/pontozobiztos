@@ -34,6 +34,7 @@ def on_message(thread, author, message):
         return False
 
     for uri in converted_uris:
+        log.debug(f'Sending URL: {uri}')
         # thread.send_uri(uri=uri)
         thread.send_text(text=uri)
     return True

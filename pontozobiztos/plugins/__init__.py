@@ -1,14 +1,15 @@
 import pathlib
 
 enabled_plugins = [
-    "counting_game",
+    # "counting_game",
     # "kakiefier",
-    "szerenchat",
-    "utility",
+    # "szerenchat",
+    # "utility",
     # "webapp_link_provider",
     "link_mirror",
     "repost",
-    "link_preview"
+    "link_preview",
+    # "forbidden_words"
 ]
 
 __all__ = [p.name for p in pathlib.Path(__file__).parent.iterdir()

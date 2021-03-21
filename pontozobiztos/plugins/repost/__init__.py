@@ -3,100 +3,66 @@ import fbchat
 import imagehash
 import logging
 import random
+import requests
+from PIL import Image
 
 log = logging.getLogger('chatbot')
 
 
-THRESHOLD = 3
-
-all_hashes = []
-all_urls = {}
-
-re_strings = ['re', 'Re', 'RE', 'ree', 'REEEE', 'R E P O S T', 'repost',
-              'voltmár', 'vót', 'vótmá', 'mótvá']
+re_strings = ['Olvasni kéne', 'Voltmár', 'REEEEEEE', 'vótmá', 'mótvá',
+              'vót', 'R E P O S T', 're']
 
 
 def init():
-    for h in get_all_hashes():
-        if h['hash']:
-            all_hashes.append((h['_id'], imagehash.hex_to_hash(h['hash'])))
-    all_urls.update(get_all_urls())
-    log.info(f'Initialized repost with {len(all_hashes)} image hashes'
-             f' and {len(all_urls)} urls')
+    pass
 
 
 def on_message(thread, author, message: fbchat.MessageData):
-    if message.text.startswith('https://'):
-        if mid := all_urls.get(message.text):
-            try:
-                thread.send_text(random.choice(re_strings), reply_to_id=mid)
-            except fbchat.InvalidParameters:
-                return True  # not in groupchat (debug)
-        all_urls[message.text] = message.id
-    elif images := [att for att in message.attachments
+    if images := [att for att in message.attachments
                     if isinstance(att, fbchat.ImageAttachment)]:
-        msg = get_msg_from_db(message.id)
-        attachments = msg['attachments']
         for img in images:
             if img.original_extension == 'gif':
                 continue
 
             try:
-                db_att = [x for x in attachments if x['uid'] == img.id][0]
-            except IndexError:
-                log.warning('No image attachment found. This shouldn\'t happen')
-                return False
+                msg_in_db = next(chatmongo.get_message_collection().find({'_id': message.id}))
+                img_hash = next(att for att in msg_in_db['attachments'] if att['uid'] == img.id)['image_hash']
+            except (StopIteration, KeyError):
+                # if not in db (different chat), download again
+                largest_image = sorted(list(img.previews),
+                                       key=lambda i: i.width or 0)[-1]
+                img = Image.open(requests.get(largest_image.url, stream=True).raw)
+                img_hash = str(imagehash.phash(img))
 
-            try:
-                imghash = imagehash.hex_to_hash(db_att['image_hash'])
-            except ValueError:
-                continue
+            reposts = find_reposts(img_hash)
+            reposts = [rep for rep in reposts if rep['_id'] != message.id]
 
-            similar = [(mid, val) for mid, h in all_hashes
-                       if (val := h - imghash) <= THRESHOLD]
+            if reposts:
+                thread.send_text(random.choice(re_strings) + f' x{len(reposts)}',
+                                 reply_to_id=reposts[0]['_id'])
 
-            if similar:
-                similar.sort(key=lambda x: x[1])
-                best_match = similar[0]
-                best_count = len([x for x in similar if x[1] == best_match[1]])
-                thread.send_text(random.choice(re_strings) + f' {best_count}x',
-                                 reply_to_id=best_match[0])
-            all_hashes.append((message.id, imghash))
         return True
     else:
         return False
 
 
-def get_msg_from_db(mid):
-    msg = chatmongo.get_message_collection()
-    cursor = msg.find({'_id': mid})
-    return next(cursor)
-
-
-def get_all_hashes():
+def find_reposts(image_hash):
     result = chatmongo.get_message_collection().aggregate([
         {'$unwind': '$attachments'},
         {'$match': {'attachments.type': 'image'}},
+        {'$match': {'attachments.image_hash': image_hash}},
         {'$replaceWith': {
             '_id': '$_id',
             'hash': '$attachments.image_hash',
-        }}
+            'created_at': '$created_at'
+        }},
+        {'$sort': {'created_at': 1}}
     ])
     return list(result)
-
-
-def get_all_urls():
-    result = chatmongo.get_message_collection().find(
-        {'text': {'$regex': 'https://'}}
-    )
-    return {x['text']: x['_id'] for x in result}
 
 
 if __name__ == '__main__':
     from PIL import Image
     init()
     imghash = imagehash.phash(Image.open('20180920205858_u100001274083888_mid.$gAADTaOUX9sVsKgyfYFl-MdLnwIWo_a1937288356574368.jpg'))
-    similar = [(mid, val) for mid, h in all_hashes
-               if (val := h - imghash) <= THRESHOLD]
-
-    print(similar)
+    print(find_reposts(str(imghash)))

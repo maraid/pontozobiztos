@@ -7,8 +7,6 @@ import fbchat
 import os
 import pickle
 from datetime import datetime
-import time
-import random
 import pytz
 import pathlib
 from dotenv import load_dotenv
@@ -124,152 +122,23 @@ class HomoBot(fbchat.Session):
             elif not chatmongo.get_user_info(thread.id).get('is_admin', False):
                 return False
 
+            if event.author.id == self.user.id:
+                return False
+
             # don't run plugins on bot's messages
-            if event.author.id != self.user.id:
-                for mod in plugin_dict.values():
-                    try:
-                        mod.on_message(thread=thread,
-                                       author=User.User(event.author.id),
-                                       message=msg)
-                    except (AttributeError, TypeError) as e:
-                        logger.warning(e)
+            # if event.author.id != self.user.id:
+            for name, mod in plugin_dict.items():
+                logger.debug('Running plugin: ' + name)
+                # try:
+                mod.on_message(thread=thread,
+                               author=User.User(event.author.id),
+                               message=msg)
             else:
                 return False
-        elif isinstance(event, fbchat.ThreadsRead):
-            pass
+        elif isinstance(event, fbchat.ReactionEvent):
+            chatmongo.add_reaction(event.message.id, event.author.id,
+                                   event.reaction)
         return False
-
-    # async def onMessage(
-    #     self,
-    #     mid=None,
-    #     author_id=None,
-    #     message=None,
-    #     message_object=None,
-    #     thread_id=None,
-    #     thread_type=fbchat.ThreadType.USER,
-    #     ts=None,
-    #     metadata=None,
-    #     msg=None,
-    # ):
-    #     if thread_id != self.GROUP_ID:
-    #         return
-    #     # if thread_id != self.uid:
-    #     #     return
-    #
-    #     logger.info(f"{message_object} from {author_id}")
-    #
-    #     chatmongo.insert_or_update_message(message_object)
-    #
-    #     print(plugin_dict)
-    #     for mod in plugin_dict.values():
-    #         try:
-    #             await mod.on_message(client=self.proxy,
-    #                            author=User.User(author_id),
-    #                            message=copy.copy(message_object))
-    #         except (AttributeError, TypeError):
-    #             pass
-    #
-    # async def onMessageUnsent(
-    #     self,
-    #     mid=None,
-    #     author_id=None,
-    #     thread_id=None,
-    #     thread_type=None,
-    #     ts=None,
-    #     msg=None,
-    # ):
-    #     if thread_id != self.GROUP_ID:
-    #         return
-    #
-    #     logger.info(f"{author_id} unsent the message {repr(mid)} at {ts}")
-    #
-    #     if not chatmongo.mark_message_as_deleted(mid):
-    #         msg = self.fetch_message_info(mid)
-    #         chatmongo.insert_or_update_message(msg)
-    #
-    #     for mod in plugin_dict.values():
-    #         try:
-    #             await mod.on_message_unsent(client=self.proxy,
-    #                                   user=User.User(author_id),
-    #                                   mid=mid)
-    #         except (AttributeError, TypeError):
-    #             pass
-    #
-    # async def onMessageSeen(
-    #     self,
-    #     seen_by=None,
-    #     thread_id=None,
-    #     thread_type=fbchat.ThreadType.USER,
-    #     seen_ts=None,
-    #     ts=None,
-    #     metadata=None,
-    #     msg=None,
-    # ):
-    #     if thread_id != self.GROUP_ID:
-    #         return
-    #
-    #     logger.info(f"Messages seen by {seen_by} at {seen_ts}")
-    #
-    #     chatmongo.set_last_read_at(seen_by, seen_ts)
-    #
-    #     for mod in plugin_dict.values():
-    #         try:
-    #             await mod.on_message_seen(client=self.proxy, seen_by=seen_by)
-    #         except (AttributeError, TypeError):
-    #             pass
-    #
-    # async def onReactionAdded(
-    #     self,
-    #     mid=None,
-    #     reaction=None,
-    #     author_id=None,
-    #     thread_id=None,
-    #     thread_type=None,
-    #     ts=None,
-    #     msg=None,
-    # ):
-    #     if thread_id != self.GROUP_ID:
-    #         return
-    #
-    #     logger.info(
-    #         f"{author_id} reacted to message {mid} with {reaction.name}")
-    #
-    #     if not chatmongo.add_reaction(mid, author_id, reaction):
-    #         msg = self.fetch_message_info(mid)
-    #         chatmongo.insert_or_update_message(msg)
-    #
-    #     for mod in plugin_dict.values():
-    #         try:
-    #             await mod.on_reaction_added(client=self.proxy,
-    #                                   message_id=mid,
-    #                                   reaction=reaction,
-    #                                   user=User.User(author_id))
-    #         except (AttributeError, TypeError):
-    #             pass
-    #
-    # async def on_reaction_removed(
-    #     self,
-    #     mid=None,
-    #     author_id=None,
-    #     thread_id=None,
-    #     thread_type=None,
-    #     ts=None,
-    #     msg=None,
-    # ):
-    #     if thread_id != self.GROUP_ID:
-    #         return
-    #     logger.info(f"{author_id} removed reaction from {mid} message.")
-    #     if not chatmongo.remove_reaction(mid, author_id):
-    #         msg = self.fetch_message_info(mid)
-    #         chatmongo.insert_or_update_message(msg)
-    #
-    #     for mod in plugin_dict.values():
-    #         try:
-    #             await mod.on_reaction_removed(client=self.proxy,
-    #                                     message_id=mid,
-    #                                     user=User.User(author_id))
-    #         except (AttributeError, TypeError):
-    #             pass
 
     def get_group_user_data(self):
         client = fbchat.Client(session=self)
@@ -308,9 +177,10 @@ class HomoBot(fbchat.Session):
         before = datetime.now(tz=utc)
         while before > latest_msg_ts:
             data = self.group._fetch_messages(200, before)
-            if len(data) == 1:  # reached the first message
+            if len(data) <= 1:  # reached the first message
+                logger.info('No more messages. Last before: ' + str(before))
                 break
-            for msg in data:
+            for msg in data[::-1]:  # reverse order will make it restart proof
                 chatmongo.insert_or_update_message(msg)
-            before = data[0].created_at
+                before = msg.created_at
             # time.sleep(random.uniform(0, 3))

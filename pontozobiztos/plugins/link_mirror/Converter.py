@@ -367,7 +367,7 @@ class Spotify(ConverterBase):
                     return local_search(title, artists)
                 except ValueError:
                     artists.remove(artist)
-        raise InnenTudodHogyJoException('Na innen tudod, hogy jó')
+        raise InnenTudodHogyJoException('Na erről tudod, hogy jó')
 
     @staticmethod
     def title_artist_gen(og_title: str, artists: Artists = None) -> Tuple[str, List[str]]:

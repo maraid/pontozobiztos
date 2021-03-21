@@ -702,7 +702,7 @@ def add_reaction(mid, reaction_author, reaction):
     Args:
         mid (str): facebook message_id
         reaction_author (str): facebook user_id of the react owner
-        reaction (MessageReaction): Message reaction object.
+        reaction (str): Emoji string.
     Returns:
         bool: True if reaction was added successfully,
             False otherwise
@@ -710,9 +710,14 @@ def add_reaction(mid, reaction_author, reaction):
     result = message_coll.update_one(
         {'_id': mid},
         {'$set': {
-            f'reactions.{reaction_author}': reaction.name
+            f'reactions.{reaction_author}': reaction
         }},
     )
+    if result.modified_count:
+        logger.info(f'Updated reaction on message {mid}. Reaction: {reaction}.'
+                    f'Author: {reaction_author}')
+    else:
+        logger.warning(f'Could not update reaction in message {mid}')
     return bool(result.modified_count)
 
 
