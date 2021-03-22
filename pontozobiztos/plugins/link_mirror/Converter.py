@@ -22,13 +22,13 @@ spotify = spotipy.Spotify(
 ytmusic = ytmusicapi.YTMusic()
 
 
-def spotify_search(*args, **kwargs):
+def call_with_retires(func, *args, **kwargs):
     retries = 0
     while retries < 3:
         try:
-            return spotify.search(*args, **kwargs)
+            return func(*args, **kwargs)
         except requests.exceptions.ConnectionError as err:
-            log.error(f'Spotify search failed. Retries: {retries}.')
+            log.error(f'Function failed. Retries: {retries}.')
             log.error(err)
             retries += 1
 
@@ -172,7 +172,7 @@ class ConverterBase:
         if artists.original:
             og_artist_list = split_at_delimeters(artists.original[0])
             for artist in [x for x in og_artist_list if x]:
-                spoti_search_result = spotify_search(q=artist, type='artist')
+                spoti_search_result = call_with_retires(spotify.search, q=artist, type='artist')
                 for it in spoti_search_result['artists']['items']:
                     if it['name'].lower() == artist:
                         artists.original = og_artist_list
@@ -181,7 +181,7 @@ class ConverterBase:
             # this case assumes title - artist format
             og_artist_list = split_at_delimeters(final_title)
             for artist in [x for x in og_artist_list if x]:
-                spoti_search_result = spotify_search(q=artist, type='artist')
+                spoti_search_result = call_with_retires(spotify.search, q=artist, type='artist')
                 for it in spoti_search_result['artists']['items']:
                     if it['name'].lower() == artist:
                         tmp = artists.original
@@ -353,9 +353,9 @@ class Spotify(ConverterBase):
     def _search(title: str, artists: List[str] = None) -> str:
         def local_search(t, a):
             if a:
-                r = spotify_search(" ".join([t, "artist:", *a]))
+                r = call_with_retires(spotify.search, " ".join([t, "artist:", *a]))
             else:
-                r = spotify_search(t)
+                r = call_with_retires(spotify.search, t)
 
             for item in r['tracks']['items']:
                 title_baseline = Spotify.strip_title(item['name'])
@@ -363,7 +363,7 @@ class Spotify(ConverterBase):
                     return item['external_urls']['spotify']
             for a in artists:
                 t_temp = t + ' ' + a
-                r = spotify_search(t_temp)
+                r = call_with_retires(spotify.search, t_temp)
                 for item in r['tracks']['items']:
                     title_baseline = Spotify.strip_title(item['name'])
                     if title_baseline == title.lower():
@@ -431,7 +431,7 @@ class Spotify(ConverterBase):
     @classmethod
     def get_title_and_artists(cls, uri) -> Tuple[str, List[str]]:
         try:
-            track = spotify.track(uri)
+            track = call_with_retires(spotify.track, uri)
         except spotipy.exceptions.SpotifyException:
             raise PluginException('Invalid spotify url')
 
