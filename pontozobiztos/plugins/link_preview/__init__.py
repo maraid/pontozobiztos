@@ -25,7 +25,7 @@ def on_message(thread: fbchat.Group, author, message):
                 f' Description: "{description}"'
                 f' Image URL: "{image_url}"')
 
-    if not (title and description and image_url):
+    if not (title and image_url):
         logger.debug(f'Incorrect preview data.')
         return False
 
@@ -38,8 +38,7 @@ def on_message(thread: fbchat.Group, author, message):
     title = '*' + title + '*\n' if title else ''
     description = description + '\n' if description else ''
 
-    if title and image_url:
-        thread.send_text(text=f'{title}{description}',
-                         files=files,
-                         reply_to_id=message.id)
+    thread.send_text(text=f'{title}{description}',
+                     files=files,
+                     reply_to_id=message.id)
     return True
