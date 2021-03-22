@@ -104,10 +104,11 @@ class HomoBot(fbchat.Session):
                 self.handle_event(event)
 
     def handle_event(self, event: fbchat._events.Event) -> bool:
-        if isinstance(event, fbchat.MessageEvent):
+        if (isinstance(event, fbchat.MessageEvent)
+           or isinstance(event, fbchat.MessageReplyEvent)):
             thread = event.message.thread
             try:
-                msg = event.message.fetch()
+                msg: fbchat.MessageData = event.message.fetch()
             except fbchat.HTTPError:
                 logger.warning('fbchat.Message.fetch() failed. trying again.')
                 msg = event.message.fetch()
