@@ -67,7 +67,7 @@ def on_message(thread: fbchat.Group, author, message):
         files = upload_with_retries(client, r.content)
         title = '*' + title + '*\n' if title else ''
         duration = get_ytvideo_length(url)
-        description = 'Időtartam:' + duration + '\n' if description else ''
+        description = 'Időtartam: ' + duration + '\n' if description else ''
 
         # thread.send_text(text=f'{title}',
         thread.send_text(text=f'{title}{description}',
