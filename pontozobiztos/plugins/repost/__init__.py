@@ -9,8 +9,20 @@ from PIL import Image
 log = logging.getLogger('chatbot')
 
 
-re_strings = ['Olvasni kéne', 'Voltmár', 'REEEEEEE', 'vótmá', 'mótvá',
-              'vót', 'R E P O S T', 're']
+re_strings = ['Olvasni kéne', 'Voltmár', 'REEEEEEE', 'vótmá',
+              'vót', 'R E P O S T', 're', 'mámegint?', 'hányszor fogod még?',
+              'a következőnél elnáspángollak', 'utolsó lövésed volt',
+              'irány a gulág', 'Olvasni kéne a chatet', 'Ez már volt',
+              'finoooom repost']
+
+
+def random_reply():
+    if random.randint(0, 1) == 0:
+        return random.choice(re_strings)
+    else:
+        votma_list = 'vótmá'.split('')
+        random.shuffle(votma_list)
+        return ''.join(votma_list)
 
 
 def init():
@@ -38,7 +50,7 @@ def on_message(thread, author, message: fbchat.MessageData):
             reposts = [rep for rep in reposts if rep['_id'] != message.id]
 
             if reposts:
-                thread.send_text(random.choice(re_strings) + f' x{len(reposts)}',
+                thread.send_text(f'{random_reply()} x{len(reposts)}',
                                  reply_to_id=reposts[0]['_id'])
 
         return True
