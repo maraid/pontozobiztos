@@ -20,7 +20,7 @@ def random_reply():
     if random.randint(0, 1) == 0:
         return random.choice(re_strings)
     else:
-        votma_list = 'vótmá'.split('')
+        votma_list = [c for c in 'vótmá']
         random.shuffle(votma_list)
         return ''.join(votma_list)
 
