@@ -32,8 +32,8 @@ def get_ytvideo_length(url):
         hours = int(duration_in_s / (60 * 60))
         minutes = int((duration_in_s % 3600) / 60)
         seconds = int(duration_in_s % 60)
-
-        return ':'.join([(hours or ''), str(minutes), str(seconds)]).strip(':')
+        sec_str = ('0' if seconds < 10 else '') + str(seconds)
+        return ':'.join([(hours or ''), str(minutes), sec_str]).strip(':')
     return ''
 
 
