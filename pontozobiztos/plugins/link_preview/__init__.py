@@ -3,11 +3,13 @@ import fbchat
 from webpreview import web_preview
 import re
 import logging
+import ytmusicapi
 
 logger = logging.getLogger("chatbot")
 
 MAX_RETRIES = 3
 
+youtube = ytmusicapi.YTMusic()
 
 def upload_with_retries(client, image):
     retries = 0
@@ -19,9 +21,26 @@ def upload_with_retries(client, image):
             retries += 1
 
 
+def get_ytvideo_length(url):
+    if match := re.search(r'(youtube\.com/watch\?.*v=([^&]+)|youtu\.be/([^?]+))', url):
+        video_id = match.groups()[1]
+        try:
+            duration_in_s = int(youtube.get_song(video_id)['lengthSeconds'])
+        except KeyError:
+            logger.info('Couldn\'t retrieve YouTube video with url: ' + url)
+            return ''
+        hours = int(duration_in_s / (60 * 60))
+        minutes = int((duration_in_s % 3600) / 60)
+        seconds = int(duration_in_s % 60)
+
+        return ':'.join([(hours or ''), str(minutes), str(seconds)]).strip(':')
+    return ''
+
+
 def on_message(thread: fbchat.Group, author, message):
     if match := re.search(r'(https://[^\s]*)', message.text):
         url = match.group(1)
+        logger.info('Extracted url: ' + url)
         client = fbchat.Client(session=thread.session)
         try:
             title, description, image_url = web_preview(
@@ -47,10 +66,11 @@ def on_message(thread: fbchat.Group, author, message):
 
         files = upload_with_retries(client, r.content)
         title = '*' + title + '*\n' if title else ''
-        # description = description + '\n' if description else ''
+        duration = get_ytvideo_length(url)
+        description = 'Időtartam: ' + duration + '\n' if description else ''
 
-        # thread.send_text(text=f'{title}{description}',
-        thread.send_text(text=f'{title}',
+        # thread.send_text(text=f'{title}',
+        thread.send_text(text=f'{title}{description}',
                          files=files,
                          reply_to_id=message.id)
         return True
