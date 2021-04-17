@@ -49,12 +49,12 @@ for module in plugins.__all__:
         del plugin
 
 
-def init_plugins(*args, **kwargs):
+def init_plugins(thread: fbchat.GroupData, *args, **kwargs):
     """Initializes plugins in    plugin_dict"""
     logger.info("Initializing plugins...")
     for name, obj in plugin_dict.items():
         try:
-            obj.init(*args, **kwargs)
+            obj.init(thread, *args, **kwargs)
         except (TypeError, AttributeError):
             logger.warning("Plugin '{}' could not be initialized "
                            "because it doesn't implement 'init'.".format(name))
@@ -69,6 +69,7 @@ class HomoBot(fbchat.Session):
     SILENT = False
     ENABLED = True
     group: fbchat.GroupData
+    client: fbchat.Client
 
     @classmethod
     def create(cls):
@@ -89,9 +90,14 @@ class HomoBot(fbchat.Session):
             pickle.dump(self.get_cookies(), cookies)
         logger.debug("Cookies saved with pickle protocol")
 
+        self.client = fbchat.Client(session=self)
+        self.group = next(self.client.fetch_thread_info([self.GROUP_ID]))
+
         self.update_users()
         self.sync_database()
-        init_plugins()
+
+        init_plugins(thread=self.group)
+
         return self
 
     def listen(self):
@@ -142,12 +148,10 @@ class HomoBot(fbchat.Session):
         return False
 
     def get_group_user_data(self):
-        client = fbchat.Client(session=self)
-        self.group = next(client.fetch_thread_info([self.GROUP_ID]))
         ids = [p.id for p in self.group.participants]
 
         user_data = []
-        for key, data in client._fetch_info(*ids).items():
+        for key, data in self.client._fetch_info(*ids).items():
             try:
                 nickname = self.group.nicknames[key]
             except KeyError:

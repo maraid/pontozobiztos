@@ -9,7 +9,8 @@ enabled_plugins = [
     "link_mirror",
     "repost",
     "link_preview",
-    # "forbidden_words"
+    # "forbidden_words",
+    "nostalgia"
 ]
 
 __all__ = [p.name for p in pathlib.Path(__file__).parent.iterdir()

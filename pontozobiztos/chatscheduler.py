@@ -8,5 +8,5 @@ scheduler = BackgroundScheduler()
 scheduler.start()
 
 
-def get_scheduler():
+def get_scheduler() -> BackgroundScheduler:
     return scheduler

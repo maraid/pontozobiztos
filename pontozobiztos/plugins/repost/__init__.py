@@ -31,7 +31,7 @@ def init():
 
 def on_message(thread, author, message: fbchat.MessageData):
     if images := [att for att in message.attachments
-                    if isinstance(att, fbchat.ImageAttachment)]:
+                  if isinstance(att, fbchat.ImageAttachment)]:
         for img in images:
             if img.original_extension == 'gif':
                 continue
