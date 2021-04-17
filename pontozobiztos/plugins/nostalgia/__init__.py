@@ -1,8 +1,7 @@
 import fbchat
 from datetime import datetime, timedelta
-import chatmongo
+from pontozobiztos import chatmongo, chatscheduler
 import pytz
-import chatscheduler
 import re
 import random
 
