@@ -9,6 +9,9 @@ services:
       - data:/chatbot_data
     links:
       - mongo
+    environment:
+      - OPENBLAS_CORETYPE=ARMV8
+      - TZ: Europe/Budapest
   mongo:
     image: mongo
     restart: always
@@ -21,14 +24,14 @@ services:
     restart: always
     ports:
       - 8081:8081
-  web:
-    build: webapp/
-    ports:
-      - 80:80
-    depends_on:
-      - mongo
-    links: 
-      - mongo
+#  web:
+#    build: webapp/
+#    ports:
+#      - 80:80
+#    depends_on:
+#      - mongo
+#    links: 
+#      - mongo
 
 volumes:
   data:
