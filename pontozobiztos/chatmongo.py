@@ -766,9 +766,24 @@ def get_latest_message():
 
 
 def find_closest_message_to_date(date: datetime):
-    cursor = message_coll\
-             .find({'created_at': {'$gte': date, '$lt': date}})\
-             .sort({'created_at': 1})\
-             .limit(1)
-    return deserialize_message(next(cursor))
+    cursor1 = message_coll.find({'created_at': {'$gte': date}})\
+              .sort([('created_at', 1)])\
+              .limit(1)
 
+    cursor2 = message_coll.find({'created_at': {'$lt': date}})\
+              .sort([('created_at', -1)])\
+              .limit(1)
+
+    try:
+        msg1 = deserialize_message(next(cursor1))
+    except StopIteration:
+        msg1 = None
+
+    try:
+        msg2 = deserialize_message(next(cursor2))
+    except StopIteration:
+        msg2 = None
+
+    if not (msg1 and msg2):
+        return msg1 or msg2
+    return msg1 if msg1.created_at < msg2.created_at else msg2
