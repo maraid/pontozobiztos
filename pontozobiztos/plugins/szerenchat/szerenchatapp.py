@@ -1,5 +1,4 @@
 import fbchat
-from pontozobiztos.models.User import User
 import random
 import logging
 from typing import List
@@ -8,14 +7,13 @@ import re
 logger = logging.getLogger("chatbot")
 
 
-def on_message(thread=None, author=None, message=None):
-    """On message callback
-
-    Args:
-        thread (fbchat.GroupData): a proxy fbchat.Client
-        author (User): pontozobiztos.models.User object
-        message (fbchat.Message): Received fbchat.Message object
+def on_message(message, author):
     """
+        Args:
+            message (fbchat.MessageData)
+            author(models.User.User)
+    """
+
     if not message.text.startswith('!'):
         return False
 
@@ -45,9 +43,9 @@ def on_message(thread=None, author=None, message=None):
             }
         ]
     elif text == '!szerenchat':
-        thread.send_text('Elérhető szerenchat parancsok. () => optional:\n'
-                         'N oldalú dobókocka M-szer:\n!d<N> (M)\n\n'
-                         '52 lapos pakliból M db húzás:\n!k52 (M)')
+        message.thread.send_text('Elérhető szerenchat parancsok. () => optional:\n'
+                                 'N oldalú dobókocka M-szer:\n!d<N> (M)\n\n'
+                                 '52 lapos pakliból M db húzás:\n!k52 (M)')
         return True
     else:
         return False
@@ -55,19 +53,19 @@ def on_message(thread=None, author=None, message=None):
     kwargs = {}
     for p in params:
         if p['value'] < p['limits'][0] or p['value'] > p['limits'][1]:
-            thread.send_text('You went full Ákos man. Never go full Ákos',
-                             reply_to_id=message.id)
+            message.thread.send_text('You went full Ákos man. Never go full Ákos',
+                                     reply_to_id=message.id)
             return True
         kwargs[p['name']] = p['value']
 
     try:
         result = func(**kwargs)
     except ValueError as e:
-        thread.send_text(str(e), reply_to_id=message.id)
+        message.thread.send_text(str(e), reply_to_id=message.id)
         return True
 
-    thread.send_text(str(' '.join(str(x) for x in result)),
-                     reply_to_id=message.id)
+    message.thread.send_text(str(' '.join(str(x) for x in result)),
+                             reply_to_id=message.id)
     return True
 
 

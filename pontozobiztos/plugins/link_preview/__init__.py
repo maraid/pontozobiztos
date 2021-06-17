@@ -37,11 +37,17 @@ def get_ytvideo_length(url):
     return ''
 
 
-def on_message(thread: fbchat.Group, author, message):
+def on_message(message, author):
+    """
+        Args:
+            message (fbchat.MessageData)
+            author(models.User.User)
+    """
+
     if match := re.search(r'(https://[^\s]*)', message.text):
         url = match.group(1)
         logger.info('Extracted url: ' + url)
-        client = fbchat.Client(session=thread.session)
+        client = fbchat.Client(session=message.thread.session)
         try:
             title, description, image_url = web_preview(
                 url, parser='html.parser', timeout=2000,
@@ -70,7 +76,7 @@ def on_message(thread: fbchat.Group, author, message):
         description = ('Időtartam: ' + duration + '\n') if duration else ''
 
         # thread.send_text(text=f'{title}',
-        thread.send_text(text=f'{title}{description}',
-                         files=files,
-                         reply_to_id=message.id)
+        message.thread.send_text(text=f'{title}{description}',
+                                 files=files,
+                                 reply_to_id=message.id)
         return True

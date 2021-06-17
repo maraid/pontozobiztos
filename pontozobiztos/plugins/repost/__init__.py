@@ -29,7 +29,13 @@ def init():
     pass
 
 
-def on_message(thread, author, message: fbchat.MessageData):
+def on_message(message, author):
+    """
+        Args:
+            message (fbchat.MessageData)
+            author(models.User.User)
+    """
+
     if images := [att for att in message.attachments
                   if isinstance(att, fbchat.ImageAttachment)]:
         for img in images:
@@ -50,8 +56,8 @@ def on_message(thread, author, message: fbchat.MessageData):
             reposts = [rep for rep in reposts if rep['_id'] != message.id]
 
             if reposts:
-                thread.send_text(f'{random_reply()} x{len(reposts)}',
-                                 reply_to_id=reposts[0]['_id'])
+                message.thread.send_text(f'{random_reply()} x{len(reposts)}',
+                                         reply_to_id=reposts[0]['_id'])
 
         return True
     else:

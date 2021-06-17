@@ -24,7 +24,7 @@ client = pymongo.MongoClient(host=os.getenv('MONGO_HOST'),
                              port=int(os.getenv('MONGO_PORT')))
 db = client.chat
 user_coll = db.users
-message_coll = db.messages
+message_coll: pymongo.collection.Collection = db.messages
 
 def get_database():
     """Return chat database"""
@@ -762,5 +762,13 @@ def remove_reaction(mid, reaction_author):
 
 def get_latest_message():
     cursor = message_coll.find().sort([('created_at', -1)]).limit(1)
+    return deserialize_message(next(cursor))
+
+
+def find_closest_message_to_date(date: datetime):
+    cursor = message_coll\
+             .find({'created_at': {'$gte': date, '$lt': date}})\
+             .sort({'created_at': 1})\
+             .limit(1)
     return deserialize_message(next(cursor))
 

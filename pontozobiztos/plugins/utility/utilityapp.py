@@ -1,4 +1,3 @@
-from pontozobiztos.MyClient import ClientProxy
 from pontozobiztos.models.User import User
 import fbchat
 from pontozobiztos import chatmongo
@@ -313,17 +312,13 @@ commands = [
 ]
 
 
-def on_message(thread, author, message):
-    """On message callback
-
-    Args:
-        thread (fbchat.Thread):
-        author (User): Facebook id of the message author
-        message (fbchat.MessageData): Message object
-
-    Returns:
-        None
+def on_message(message, author):
     """
+        Args:
+            message (fbchat.MessageData)
+            author(models.User.User)
+    """
+
     if not message.text or not message.text.startswith('!'):
         return False
 
@@ -342,20 +337,20 @@ def on_message(thread, author, message):
     try:
         selected_command = [x for x in commands if command_parts[0] in x['cmd']][0]
     except IndexError:
-        thread.send_text('Unkown command. Type !help to show help message')
+        message.thread.send_text('Unkown command. Type !help to show help message')
         return False
 
     parameters = command_parts[1:]  # remove the actual command
     result = None
     if not selected_command['allowed_for']:
         logger.debug(f'Executing command {command_parts[0]}')
-        result = selected_command['function'](thread, author, message, *parameters)
+        result = selected_command['function'](message.thread, author, message, *parameters)
     elif 'pontozo' in selected_command['allowed_for'] and author.is_pontozo:
         logger.debug(f'Executing command {command_parts[0]} as pontozo')
-        result = selected_command['function'](thread, author, message, *parameters)
+        result = selected_command['function'](message.thread, author, message, *parameters)
     elif 'admin' in selected_command['allowed_for'] and author.is_admin:
         logger.debug(f'Executing command {command_parts[0]} as admin')
-        result = selected_command['function'](thread, author, message, *parameters)
+        result = selected_command['function'](message.thread, author, message, *parameters)
 
     # it can also be None which is not handled
     if result is True:
