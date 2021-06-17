@@ -1,4 +1,5 @@
 from . import chatmongo, plugins, chatscheduler
+from apscheduler.jobstores.base import JobLookupError
 from .models import User
 import importlib
 import logging
@@ -77,7 +78,7 @@ class HomoBot(fbchat.Session):
     ENABLED = True
     group: fbchat.GroupData
     client: fbchat.Client
-    reset_job: Job
+    reset_job: Job = None
 
     @classmethod
     def create(cls):
@@ -100,9 +101,9 @@ class HomoBot(fbchat.Session):
 
         self.client = fbchat.Client(session=self)
         self.group = next(self.client.fetch_thread_info([self.GROUP_ID]))
-        self.reset_job = Job(chatscheduler.get_scheduler(),
-                             func=self.schedule_reset)
 
+
+        self.schedule_reset()
         self.update_users()
         self.sync_database()
 
@@ -112,7 +113,11 @@ class HomoBot(fbchat.Session):
 
     def schedule_reset(self):
         next_reset_date = datetime.now() + timedelta(seconds=BOT_RESET_TIME)
-        self.reset_job.reschedule('date', run_date=next_reset_date)
+        try:
+            self.reset_job.reschedule('date', run_date=next_reset_date)
+        except (AttributeError, JobLookupError):
+            sched = chatscheduler.get_scheduler()
+            self.reset_job = sched.add_job(raise_reset, 'date', [], next_run_time=next_reset_date)
 
     def listen(self):
         listener = fbchat.Listener(session=self,
