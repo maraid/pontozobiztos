@@ -6,11 +6,14 @@ import logging
 import fbchat
 import os
 import pickle
-from datetime import datetime
+from datetime import datetime, timedelta
 import pytz
 import pathlib
+from apscheduler.job import Job
 from dotenv import load_dotenv
 load_dotenv()
+
+import chatscheduler
 
 utc = pytz.UTC
 
@@ -18,6 +21,7 @@ logger = logging.getLogger("chatbot")
 logger.setLevel(logging.DEBUG)
 
 COOKIES_LOC = "/chatbot_data/cookies"
+BOT_RESET_TIME = 15 * 60  # seconds
 
 logformat = "%(asctime)s.%(msecs)03d [%(levelname)s] <%(module)s> %(funcName)s(): %(message)s"
 dateformat = "%Y-%m-%d %H:%M:%S"
@@ -64,12 +68,17 @@ def on_2fa_callback():
     return int(input("Enter 2FA code: "))
 
 
+def raise_reset():
+    raise ResetException()
+
+
 class HomoBot(fbchat.Session):
     GROUP_ID = '232447473612485'
     SILENT = False
     ENABLED = True
     group: fbchat.GroupData
     client: fbchat.Client
+    reset_job: Job
 
     @classmethod
     def create(cls):
@@ -92,6 +101,8 @@ class HomoBot(fbchat.Session):
 
         self.client = fbchat.Client(session=self)
         self.group = next(self.client.fetch_thread_info([self.GROUP_ID]))
+        self.reset_job = Job(chatscheduler.get_scheduler(),
+                             func=self.schedule_reset)
 
         self.update_users()
         self.sync_database()
@@ -100,12 +111,17 @@ class HomoBot(fbchat.Session):
 
         return self
 
+    def schedule_reset(self):
+        next_reset_date = datetime.now() + timedelta(seconds=BOT_RESET_TIME)
+        self.reset_job.reschedule('date', run_date=next_reset_date)
+
     def listen(self):
         listener = fbchat.Listener(session=self,
                                    chat_on=False,
                                    foreground=False)
         logger.info('Listening...')
         for event in listener.listen():
+            self.schedule_reset()
             if isinstance(event, fbchat.ThreadEvent):
                 self.handle_event(event)
 
@@ -189,3 +205,7 @@ class HomoBot(fbchat.Session):
                 chatmongo.insert_or_update_message(msg)
                 before = msg.created_at
             # time.sleep(random.uniform(0, 3))
+
+
+class ResetException(Exception):
+    pass
