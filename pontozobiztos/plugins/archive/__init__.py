@@ -42,7 +42,7 @@ def on_message(message, author):
     except StopIteration:
         return True
 
-    message.thread.send_text(text='^', reply_to_id=closest_message['_id'])
+    message.thread.send_text(text='^', reply_to_id=closest_message.id)
     return True
 
 
