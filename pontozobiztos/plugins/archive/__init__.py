@@ -17,11 +17,19 @@ def on_message(message, author):
 
     params = [x for x in message.text[10:].split(' ') if x]
 
+    date = None
     if len(params) == 1:
-        date = datetime.strptime(' '.join(params), '%Y.%m.%d')
+        try:
+            date = datetime.strptime(' '.join(params), '%Y.%m.%d')
+        except ValueError:
+            pass
     elif len(params) == 2:
-        date = datetime.strptime(' '.join(params), '%Y.%m.%d %H:%M:%S')
-    else:
+        try:
+            date = datetime.strptime(' '.join(params), '%Y.%m.%d %H:%M:%S')
+        except ValueError:
+            pass
+
+    if date is None:
         message.react('🤷‍♂️')
         return True
 
