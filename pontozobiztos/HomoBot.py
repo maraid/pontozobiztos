@@ -153,9 +153,8 @@ class HomoBot(fbchat.Session):
             for name, mod in plugin_dict.items():
                 logger.debug('Running plugin: ' + name)
                 # try:
-                mod.on_message(thread=thread,
-                               author=User.User(event.author.id),
-                               message=msg)
+                mod.on_message(message=msg,
+                               author=User.User(event.author.id))
             else:
                 return False
         elif isinstance(event, fbchat.ReactionEvent):

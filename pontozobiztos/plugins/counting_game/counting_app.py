@@ -46,17 +46,13 @@ def format_scores(reason="GAME OVER"):
     return Message.format_mentions(text, *mentions)
 
 
-def on_message(thread, author, message):
+def on_message(message, author):
+    """
+        Args:
+            message (fbchat.MessageData)
+            author(models.User.User)
     """
 
-    Args:
-        thread (fbchat.GroupData):
-        author (pontozobiztos.models.User.User):
-        message (fbchat.Message):
-
-    Returns:
-
-    """
     global expected_number
     global is_running
     global scores
@@ -68,7 +64,7 @@ def on_message(thread, author, message):
     if text == '1':
         if not is_running:
             is_running = True
-            current_thread = thread
+            current_thread = message.thread
         else:
             message.react('👎')
             do_game_over()

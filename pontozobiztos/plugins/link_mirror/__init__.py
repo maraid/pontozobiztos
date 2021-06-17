@@ -9,14 +9,13 @@ import logging
 log = logging.getLogger("chatbot")
 
 
-def on_message(thread, author, message):
-    """On message callback
-
-    Args:
-        thread (GroupData): a proxy fbchat.Client
-        author (User): pontozobiztos.models.User object
-        message (Message): Received fbchat.Message object
+def on_message(message, author):
     """
+        Args:
+            message (fbchat.MessageData)
+            author(models.User.User)
+    """
+
     if not message.text.startswith('https://'):
         return False
 
@@ -25,7 +24,7 @@ def on_message(thread, author, message):
         log.info(f'Successfully converted {message.text}. '
                  f'Results: {converted_uris}')
     except Converter.InnenTudodHogyJoException as e:
-        thread.send_text(str(e), reply_to_id=message.id)
+        message.thread.send_text(str(e), reply_to_id=message.id)
         log.info(f'Link: {message.text} detected as music, '
                  f'but could not be converted.')
         return True
@@ -36,5 +35,5 @@ def on_message(thread, author, message):
     for uri in converted_uris:
         log.debug(f'Sending URL: {uri}')
         # thread.send_uri(uri=uri)
-        thread.send_text(text=uri)
+        message.thread.send_text(text=uri)
     return True

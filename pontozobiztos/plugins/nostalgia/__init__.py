@@ -14,10 +14,16 @@ def init(thread, *args, **kwargs):
     group_thread = thread
 
     sched = chatscheduler.get_scheduler()
-    sched.add_job(callback, 'cron', hour='7,20', minute=30)
+    # sched.add_job(callback, 'cron', hour='7,20', minute=30)
+    sched.add_job(callback, 'cron', hour='8,20', minute=8)
 
 
-def on_message(thread: fbchat.Group, author, message):
+def on_message(message, author):
+    """
+        Args:
+            message (fbchat.MessageData)
+            author(models.User.User)
+    """
     pass
 
 
