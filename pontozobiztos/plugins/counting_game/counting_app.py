@@ -18,6 +18,7 @@ expected_number = 1
 is_running = False
 scores = {}
 last_n = []
+last_message = None
 current_thread: fbchat.GroupData
 
 game_over_job = None
@@ -58,6 +59,7 @@ def on_message(message, author):
     global scores
     global last_n
     global current_thread
+    global last_message
 
     print('counting_game.on_message called')
     text = unidecode(message.text).lower()
@@ -86,8 +88,8 @@ def on_message(message, author):
     if accepted is None:
         return
     elif not accepted or author.uid in last_n:
-        message.react('👎')
-        do_game_over()
+        message.react('🤦')
+        do_game_over(timeout=False)
     else:
         last_n.append(author.uid)
         if len(last_n) >= MIN_PLAYERS:
@@ -95,12 +97,13 @@ def on_message(message, author):
 
         scores.update({author.uid: scores.get(author.uid, 0) + 1})
         expected_number += 1
-        message.react('👍')
+        message.react('👌')
+        last_message = message
         schedule_game_over()
     return True
 
 
-def do_game_over(reason="GAME OVER"):
+def do_game_over(reason="GAME OVER", timeout=True):
     global scores
     global last_n
     global expected_number
@@ -110,6 +113,12 @@ def do_game_over(reason="GAME OVER"):
         game_over_job.remove()
     except (JobLookupError, AttributeError):
         pass
+
+    if timeout:
+        try:
+            last_message.react('⌛')
+        except AttributeError:
+            pass
 
     if SHOW_GAME_OVER:
         text, mentions = format_scores(reason)
