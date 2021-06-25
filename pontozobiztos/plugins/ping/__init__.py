@@ -4,6 +4,8 @@ def on_message(message, author):
             message (fbchat.MessageData)
             author(models.User.User)
     """
-
-    if message.text == 'ping':
-        message.thread.send_text('pong')
+    
+    formatted = message.text.lower().strip()
+    
+    if formatted[1:] == 'ing':
+        message.thread.send_text(formatted[0] + 'ong')

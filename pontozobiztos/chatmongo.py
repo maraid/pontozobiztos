@@ -25,6 +25,7 @@ client = pymongo.MongoClient(host=os.getenv('MONGO_HOST'),
 db = client.chat
 user_coll = db.users
 message_coll: pymongo.collection.Collection = db.messages
+persistent_coll: pymongo.collection.Collection = db.persistent
 
 def get_database():
     """Return chat database"""
@@ -787,3 +788,17 @@ def find_closest_message_to_date(date: datetime):
     if not (msg1 and msg2):
         return msg1 or msg2
     return msg1 if msg1.created_at < msg2.created_at else msg2
+  
+def get_var(name: str):
+    result = persistent.find_one({'name': name})
+    return result['value']
+  
+def set_var(name: str, value):
+    persistent.update_one({'name': name}, {'$set': {'value': value}}, upsert=True)
+    
+def decrement_counter(name:str, step: int = 1):
+    persistent.update_one({'name': name}, {'$inc': {'value': -step}})
+    
+def increment_counter(name:str, step: int = 1):
+    persistent.update_one({'name': name}, {'$inc': {'value': step}})
+    
