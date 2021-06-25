@@ -57,7 +57,7 @@ def on_message(message, author):
 
             if reposts:
                 if img_hash == 'f42bd5a54ad62962':
-                    message.thread.send_text(f'{chatmongo.get_var('floppa')} to go.',
+                    message.thread.send_text(f'{chatmongo.get_var("floppa")} to go.',
                                              reply_to_id=reposts[0]['_id'])
                     chatmongo.decrement_counter('floppa')
                 else:
