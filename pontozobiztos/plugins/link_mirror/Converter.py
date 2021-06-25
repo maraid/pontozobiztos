@@ -369,6 +369,7 @@ class Spotify(ConverterBase):
                     if title_baseline == title.lower():
                         return item['external_urls']['spotify']
             try:
+                print(r)
                 return r['tracks']['items'][0]['external_urls']['spotify']
             except IndexError:
                 raise ValueError
@@ -443,6 +444,14 @@ class Spotify(ConverterBase):
     def convert(cls, uri) -> List[str]:
         return [YoutubeMusic.get_url_from_data(*cls.get_title_and_artists(uri))]
 
+    @classmethod
+    def get_album_cover_and_preview_url(cls, uri: str) -> {str, str}:
+        if not uri.startswith(cls.URI_BASE):
+            return ()
+
+        track = call_with_retires(spotify.track, uri)
+        return track['album']['images'][0]['url'], track['preview_url']
+
 
 def convert_uri(uri: str) -> Union[List[str], None]:
     log.info('Received URI: ' + uri)
@@ -456,6 +465,19 @@ def convert_uri(uri: str) -> Union[List[str], None]:
 
     log.info('Converted list of URIs: ' + str(result))
     return result
+
+
+def extract_track_info(uri: str):
+    converted_urls = convert_uri(uri)
+    urls = [*converted_urls, uri]
+    track = None
+    for url in urls:
+        res = Spotify.get_album_cover_and_preview_url(url)
+        if res:
+            track = res
+    if track:
+        return converted_urls, *track
+    return converted_urls, None, None
 
 
 class PluginException(BaseException):

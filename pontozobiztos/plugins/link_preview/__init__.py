@@ -11,6 +11,7 @@ MAX_RETRIES = 3
 
 youtube = ytmusicapi.YTMusic()
 
+
 def upload_with_retries(client, image):
     retries = 0
     while retries < MAX_RETRIES:
