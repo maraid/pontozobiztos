@@ -794,5 +794,11 @@ def get_var(name: str):
     return result['value']
   
 def set_var(name: str, value):
-    persistent.update_one({'name': name}, {'value': value}, upsert=True)
+    persistent.update_one({'name': name}, {'$set': {'value': value}}, upsert=True)
+    
+def decrement_counter(name:str, step: int = 1):
+    persistent.update_one({'name': name}, {'$inc': {'value': -step}})
+    
+def increment_counter(name:str, step: int = 1):
+    persistent.update_one({'name': name}, {'$inc': {'value': step}})
     
