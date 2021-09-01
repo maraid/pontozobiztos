@@ -19,7 +19,7 @@ def upload_with_retries(client, file, ftype):
             if ftype == 'png':
                 return client.upload([("foobar.png", file, 'image/png')])
             elif ftype == 'mp3':
-                return client.upload([("foobar.mp3", file, 'audio/mpeg')])
+                return client.upload([("foobar.mp3", file, 'audio/mpeg')], voice_clip=True)
         except fbchat.HTTPError:
             log.error('Failed to upload image. Retrying...')
             retries += 1
@@ -64,5 +64,6 @@ def on_message(message, author):
     msg_text = '\n\n'.join(converted_uris)
     log.debug(f'Sending URL: {msg_text}')
     files = fb_album + fb_preview
-    message.thread.send_text(text=msg_text, files=files)
+    message.thread.send_text(text=msg_text, files=fb_album)
+    message.thread.send_text(text=None, files=fb_preview)
     return True
