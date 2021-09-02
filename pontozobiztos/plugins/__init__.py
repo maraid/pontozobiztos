@@ -10,7 +10,7 @@ enabled_plugins = [
     "repost",
     "link_preview",
     # "forbidden_words",
-    "nostalga",
+    "nostalgia",
     "archive",
     "ping"
 ]
