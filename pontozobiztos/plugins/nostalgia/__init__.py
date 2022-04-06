@@ -78,10 +78,11 @@ def top_n_legacy_emojis(year, n=3):
 def callback():
     top3 = []
     year = 0
+    year_today = datetime.today().year
     while not top3:
-        year = random.randint(2014, datetime.today().year - 1)
+        year = random.randint(2014, year_today - 1)
         top3 = top_n_most_reactions(year) or top_n_legacy_emojis(year)
     selected_msg = random.choice(top3)
 
-    reply_text = f'Úgy számoltam, hogy ez vicces volt {year} ezen napján.'
+    reply_text = f'Ezen a napon, {year_today - year} évvel ezelőtt'
     group_thread.send_text(text=reply_text, reply_to_id=selected_msg['_id'])
